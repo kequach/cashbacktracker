@@ -59,6 +59,43 @@ Install on a connected emulator or device with:
 .\gradlew.bat installDebug --no-configuration-cache
 ```
 
+## GitHub Actions
+
+The repository includes an Android CI workflow at `.github/workflows/android.yml`.
+It runs on pushes to `main`, pull requests, and manual dispatches.
+
+The workflow:
+
+- builds the debug APK,
+- runs JVM unit tests,
+- runs Android lint,
+- uploads the debug APK as a workflow artifact,
+- uploads the lint HTML report as a workflow artifact.
+
+Do not commit generated APK files to the repository. Download them from the
+GitHub Actions run artifacts instead.
+
+The repository also includes `.github/workflows/android-release.yml`. It runs
+when a GitHub Release is published, builds a signed release APK, and uploads it
+to that GitHub Release.
+
+Create these repository secrets before publishing a release:
+
+- `ANDROID_KEYSTORE_BASE64`: base64 encoded release keystore.
+- `ANDROID_KEYSTORE_PASSWORD`: release keystore password.
+- `ANDROID_KEY_ALIAS`: key alias inside the keystore.
+- `ANDROID_KEY_PASSWORD`: password for the key alias.
+
+Create a base64 keystore secret from PowerShell with:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("cashback-release.jks")) | Set-Clipboard
+```
+
+For direct APK distribution, attaching a signed APK to a GitHub Release is a
+common approach. For Google Play distribution, prefer building a signed Android
+App Bundle with `bundleRelease` and using Play App Signing.
+
 ## Production APK
 
 Build a release APK with:
