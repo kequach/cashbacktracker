@@ -25,8 +25,8 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 - The app has three primary areas:
   - Cashback input: URL-first entry, product/cashback name, redemption date
     range, purchase price, selected IBAN, selected device, and notes.
-  - Cashback data: list of all entered cashback records, paid/transferred status,
-    status reset, milestone toggle, and CSV export.
+  - Cashback data: list of all entered cashback records, status changes,
+    milestone toggle, and CSV export.
   - Master data: devices used for cashback redemption and bank accounts with
     IBAN, account holder name, and optional nickname.
 - The cashback link is the first input when creating or editing a cashback
@@ -111,8 +111,11 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 - Cashback entries are currently 100% cashback. The purchase price is the
   expected reimbursement amount. Do not add separate expected/result amount
   fields unless the user asks for partial cashback support.
-- Track status separately from money values. "Paid/transferred" is a status,
-  not just a color.
+- Track status separately from money values. Valid cashback statuses are
+  `Geplant`, `Eingereicht`, and `Ueberwiesen`.
+- Let users save a new cashback entry directly as planned or submitted.
+- In the cashback list, tapping a row should cycle status in this order:
+  `Geplant` -> `Eingereicht` -> `Ueberwiesen` -> `Geplant`.
 - Milestone animations should be driven by computed total reimbursed amount and
   should trigger once per reached threshold unless the user chooses otherwise.
   Default milestones are 100, 500, and 1000 EUR. Make milestone celebrations
@@ -129,9 +132,13 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 - Use clear tabs or adaptive navigation for input, data, and master data.
 - When the current cashback action was already entered, mark previously used
   IBAN and device options as warnings while keeping them selectable.
+- Cashback link and product inputs should show the three newest unique previous
+  entries on focus/click, then filter suggestions while typing.
 - Make tables/lists dense and scannable, with search/filter/sort once data grows.
 - Use color as a supplement, never the only signal. Paid/transferred items need
   text/icon state for accessibility.
+- In cashback lists, submitted entries should use the primary container color
+  and paid/transferred entries should use a calm green status color.
 - Respect reduced-motion settings. Milestone animations should feel rewarding
   but must not block core tracking workflows.
 - Support light and dark themes and avoid hardcoded colors outside the theme.

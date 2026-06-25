@@ -12,7 +12,7 @@ import com.cashbacktracker.data.model.CashbackStatus
         CashbackDeviceEntity::class,
         CashbackEntryEntity::class,
     ],
-    version = 4,
+    version = 1,
     exportSchema = true,
 )
 @TypeConverters(CashbackTypeConverters::class)

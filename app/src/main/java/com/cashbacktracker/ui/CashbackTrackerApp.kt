@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountBalance
@@ -63,6 +64,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,6 +92,9 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+
+private val PaidStatusContainer = Color(0xFFDDF6E8)
+private val PaidStatusContent = Color(0xFF14532D)
 
 @Composable
 fun CashbackTrackerApp(viewModel: MainViewModel) {
@@ -160,11 +166,11 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
                 )
 
                 AppTab.DATA -> CashbackDataScreen(
-                    uiState = uiState,
-                    modifier = Modifier.padding(padding),
-                    onTogglePaid = viewModel::togglePaid,
-                    onMilestonesEnabledChange = viewModel::setMilestoneCelebrationsEnabled,
-                    onExportClick = { showExportWarning = true },
+                uiState = uiState,
+                modifier = Modifier.padding(padding),
+                onStatusChange = viewModel::updateCashbackStatus,
+                onMilestonesEnabledChange = viewModel::setMilestoneCelebrationsEnabled,
+                onExportClick = { showExportWarning = true },
                 )
 
                 AppTab.MASTER_DATA -> MasterDataScreen(
@@ -186,8 +192,8 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
             onMilestoneFinished = viewModel::dismissMilestone,
             onCelebrationFinished = viewModel::dismissCelebration,
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp, vertical = 24.dp),
+                .align(Alignment.BottomCenter)
+                .padding(start = 16.dp, end = 16.dp, bottom = 96.dp),
         )
     }
 
@@ -229,7 +235,7 @@ private fun CashbackInputScreen(
     onFormChange: ((CashbackFormState) -> CashbackFormState) -> Unit,
     onAnalyzeUrl: () -> Unit,
     onApplySuggestion: (Long) -> Unit,
-    onSave: () -> Unit,
+    onSave: (CashbackStatus) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier
@@ -244,7 +250,6 @@ private fun CashbackInputScreen(
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                Text("100% Cashback: Der Kaufpreis ist zugleich die erwartete Erstattung.")
             }
         }
         item {
@@ -264,7 +269,7 @@ private fun CashbackInputScreen(
 private fun CashbackDataScreen(
     uiState: MainUiState,
     modifier: Modifier = Modifier,
-    onTogglePaid: (Long, Boolean) -> Unit,
+    onStatusChange: (Long, CashbackStatus, CashbackStatus) -> Unit,
     onMilestonesEnabledChange: (Boolean) -> Unit,
     onExportClick: () -> Unit,
 ) {
@@ -317,7 +322,7 @@ private fun CashbackDataScreen(
                 cashback = cashback,
                 bankAccounts = uiState.bankAccounts,
                 devices = uiState.devices,
-                onTogglePaid = onTogglePaid,
+                onStatusChange = onStatusChange,
             )
             HorizontalDivider()
         }
@@ -332,19 +337,20 @@ private fun CashbackForm(
     onFormChange: ((CashbackFormState) -> CashbackFormState) -> Unit,
     onAnalyzeUrl: () -> Unit,
     onApplySuggestion: (Long) -> Unit,
-    onSave: () -> Unit,
+    onSave: (CashbackStatus) -> Unit,
 ) {
     var showRedemptionRangePicker by remember { mutableStateOf(false) }
-    val suggestions = remember(form.cashbackUrl, form.productName, uiState.cashbacks) {
-        uiState.cashbacks
-            .filter { cashback ->
-                val urlQuery = form.cashbackUrl.trim()
-                val productQuery = form.productName.trim()
-                (urlQuery.length >= 4 && cashback.cashbackUrl.contains(urlQuery, ignoreCase = true)) ||
-                    (productQuery.length >= 2 && cashback.productName.contains(productQuery, ignoreCase = true))
-            }
-            .distinctBy { it.cashbackUrl to it.productName }
-            .take(6)
+    val linkSuggestions = remember(form.cashbackUrl, uiState.cashbacks) {
+        uiState.cashbacks.recentUniqueSuggestions(
+            query = form.cashbackUrl,
+            valueSelector = CashbackEntry::cashbackUrl,
+        )
+    }
+    val productSuggestions = remember(form.productName, uiState.cashbacks) {
+        uiState.cashbacks.recentUniqueSuggestions(
+            query = form.productName,
+            valueSelector = CashbackEntry::productName,
+        )
     }
     val usedBankAccountIds = remember(form.cashbackUrl, form.productName, uiState.cashbacks) {
         uiState.cashbacks
@@ -369,7 +375,7 @@ private fun CashbackForm(
                 value = form.cashbackUrl,
                 onValueChange = { value -> onFormChange { it.copy(cashbackUrl = value) } },
                 label = "Cashback-Link",
-                suggestions = suggestions,
+                suggestions = linkSuggestions,
                 suggestionLabel = { it.cashbackUrl },
                 onSuggestionClick = { onApplySuggestion(it.id) },
             )
@@ -383,8 +389,8 @@ private fun CashbackForm(
             SuggestingTextField(
                 value = form.productName,
                 onValueChange = { value -> onFormChange { it.copy(productName = value) } },
-                label = "Cashback / Produkt",
-                suggestions = suggestions,
+                label = "Produktname",
+                suggestions = productSuggestions,
                 suggestionLabel = { it.productName },
                 onSuggestionClick = { onApplySuggestion(it.id) },
             )
@@ -431,8 +437,22 @@ private fun CashbackForm(
                 label = { Text("Notizen") },
                 minLines = 2,
             )
-            Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
-                Text("Speichern")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { onSave(CashbackStatus.PLANNED) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Geplant speichern")
+                }
+                Button(
+                    onClick = { onSave(CashbackStatus.SUBMITTED) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Eingereicht speichern")
+                }
             }
         }
     }
@@ -463,7 +483,7 @@ private fun SuggestingTextField(
     suggestionLabel: (CashbackEntry) -> String,
     onSuggestionClick: (CashbackEntry) -> Unit,
 ) {
-    var expanded by remember(value, suggestions) { mutableStateOf(suggestions.isNotEmpty()) }
+    var expanded by remember { mutableStateOf(false) }
     Column {
         OutlinedTextField(
             value = value,
@@ -471,7 +491,13 @@ private fun SuggestingTextField(
                 onValueChange(it)
                 expanded = true
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        expanded = true
+                    }
+                },
             label = { Text(label) },
             singleLine = true,
         )
@@ -580,19 +606,23 @@ private fun CashbackEntryListItem(
     cashback: CashbackEntry,
     bankAccounts: List<BankAccount>,
     devices: List<CashbackDevice>,
-    onTogglePaid: (Long, Boolean) -> Unit,
+    onStatusChange: (Long, CashbackStatus, CashbackStatus) -> Unit,
 ) {
-    val isPaid = cashback.status == CashbackStatus.PAID
     val bankAccountName = bankAccounts.firstOrNull { it.id == cashback.bankAccountId }?.nickname ?: "-"
     val deviceName = devices.firstOrNull { it.id == cashback.deviceId }?.name ?: "-"
+    val statusColors = cashback.status.listItemStatusColors()
     ListItem(
-        modifier = Modifier.fillMaxWidth(),
-        colors = ListItemDefaults.colors(
-            containerColor = if (isPaid) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                onStatusChange(cashback.id, cashback.status, cashback.status.nextStatus())
             },
+        colors = ListItemDefaults.colors(
+            containerColor = statusColors.container,
+            headlineColor = statusColors.content,
+            supportingColor = statusColors.content,
+            leadingIconColor = statusColors.content,
+            trailingIconColor = statusColors.content,
         ),
         headlineContent = {
             Text(
@@ -625,7 +655,7 @@ private fun CashbackEntryListItem(
                 }
             }
         },
-        leadingContent = if (isPaid) {
+        leadingContent = if (cashback.status == CashbackStatus.PAID) {
             {
                 Icon(Icons.Default.CheckCircle, contentDescription = null)
             }
@@ -633,23 +663,46 @@ private fun CashbackEntryListItem(
             null
         },
         trailingContent = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = cashback.status.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                TextButton(onClick = { onTogglePaid(cashback.id, isPaid) }) {
-                    Text(if (isPaid) "Zurueck" else "Ueberwiesen")
-                }
-            }
+            Text(
+                text = cashback.status.label,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         },
     )
 }
+
+private fun CashbackStatus.nextStatus(): CashbackStatus =
+    when (this) {
+        CashbackStatus.PLANNED -> CashbackStatus.SUBMITTED
+        CashbackStatus.SUBMITTED -> CashbackStatus.PAID
+        CashbackStatus.PAID -> CashbackStatus.PLANNED
+    }
+
+@Composable
+private fun CashbackStatus.listItemStatusColors(): StatusListItemColors =
+    when (this) {
+        CashbackStatus.PLANNED -> StatusListItemColors(
+            container = MaterialTheme.colorScheme.surface,
+            content = MaterialTheme.colorScheme.onSurface,
+        )
+
+        CashbackStatus.SUBMITTED -> StatusListItemColors(
+            container = MaterialTheme.colorScheme.primaryContainer,
+            content = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+
+        CashbackStatus.PAID -> StatusListItemColors(
+            container = PaidStatusContainer,
+            content = PaidStatusContent,
+        )
+    }
+
+private data class StatusListItemColors(
+    val container: Color,
+    val content: Color,
+)
 
 @Composable
 private fun MasterDataScreen(
@@ -878,7 +931,7 @@ private fun TransientCelebrationCard(
     onFinished: () -> Unit,
 ) {
     LaunchedEffect(eventKey) {
-        delay(1_800)
+        delay(2_300)
         onFinished()
     }
 
@@ -941,6 +994,26 @@ private fun formatDateRange(cashback: CashbackEntry): String {
     val start = DateInput.format(cashback.redemptionStart).ifBlank { "-" }
     val end = DateInput.format(cashback.redemptionEnd).ifBlank { "-" }
     return "$start bis $end"
+}
+
+private fun List<CashbackEntry>.recentUniqueSuggestions(
+    query: String,
+    valueSelector: (CashbackEntry) -> String,
+): List<CashbackEntry> {
+    val trimmedQuery = query.trim()
+    return asSequence()
+        .filter { valueSelector(it).isNotBlank() }
+        .filter { cashback ->
+            trimmedQuery.isBlank() ||
+                valueSelector(cashback).contains(trimmedQuery, ignoreCase = true)
+        }
+        .sortedWith(
+            compareByDescending<CashbackEntry> { it.createdAt }
+                .thenByDescending { it.id },
+        )
+        .distinctBy { valueSelector(it).normalizedActionKey() }
+        .take(3)
+        .toList()
 }
 
 private fun CashbackEntry.matchesCashbackAction(form: CashbackFormState): Boolean {

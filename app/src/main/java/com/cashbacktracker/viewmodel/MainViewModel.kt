@@ -171,7 +171,7 @@ class MainViewModel(
         }
     }
 
-    fun saveCashback() {
+    fun saveCashback(status: CashbackStatus) {
         val form = cashbackForm.value
         val purchasePriceMinor = MoneyFormatter.parseMinor(form.purchasePrice)
         val redemptionStart = DateInput.parse(form.redemptionStart)
@@ -201,10 +201,9 @@ class MainViewModel(
                 bankAccountId = form.bankAccountId,
                 deviceId = form.deviceId,
                 notes = form.notes,
-                status = form.status,
+                status = status,
             )
             cashbackForm.value = CashbackFormState()
-            message.value = "Cashback wurde gespeichert."
             celebrationEvent.value = CelebrationEvent(
                 id = System.currentTimeMillis(),
                 kind = CelebrationKind.CREATED,
@@ -238,20 +237,18 @@ class MainViewModel(
         }
     }
 
-    fun togglePaid(id: Long, isPaid: Boolean) {
+    fun updateCashbackStatus(id: Long, currentStatus: CashbackStatus, newStatus: CashbackStatus) {
+        if (currentStatus == newStatus) return
+
         viewModelScope.launch {
-            cashbackRepository.setStatus(
-                id = id,
-                status = if (isPaid) CashbackStatus.PLANNED else CashbackStatus.PAID,
-            )
-            if (!isPaid) {
-                message.value = "Cashback als ueberwiesen markiert."
+            cashbackRepository.setStatus(id = id, status = newStatus)
+            if (newStatus == CashbackStatus.PAID) {
                 celebrationEvent.value = CelebrationEvent(
                     id = System.currentTimeMillis(),
                     kind = CelebrationKind.PAID,
                 )
             } else {
-                message.value = "Ueberwiesen-Status zurueckgesetzt."
+                message.value = "Status wurde aktualisiert."
             }
         }
     }
@@ -268,7 +265,6 @@ class MainViewModel(
                 notes = entry.notes,
                 bankAccountId = null,
                 deviceId = null,
-                status = CashbackStatus.PLANNED,
             )
         }
         message.value = "Vorlage uebernommen. Bitte IBAN und Geraet waehlen."
