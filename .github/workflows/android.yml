@@ -38,6 +38,19 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Validate version metadata
+        run: |
+          version_name="$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2- | tr -d '\r' | xargs)"
+          version_code="$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2- | tr -d '\r' | xargs)"
+          if ! [[ "${version_name}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::VERSION_NAME must use semantic versioning, for example 0.1.0."
+            exit 1
+          fi
+          if ! [[ "${version_code}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::VERSION_CODE must be a positive integer."
+            exit 1
+          fi
+
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-configuration-cache --stacktrace
 

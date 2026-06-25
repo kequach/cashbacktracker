@@ -59,6 +59,27 @@ Install on a connected emulator or device with:
 .\gradlew.bat installDebug --no-configuration-cache
 ```
 
+## Versioning
+
+App version values live in `gradle.properties`:
+
+```properties
+VERSION_NAME=0.1.0
+VERSION_CODE=1
+```
+
+Use semantic versioning for `VERSION_NAME` and increment `VERSION_CODE` for
+every public release. The GitHub Release tag must match the version name with a
+leading `v`, for example `v0.1.0`.
+
+Release checklist:
+
+1. Bump `VERSION_NAME` and `VERSION_CODE` in `gradle.properties`.
+2. Update `CHANGELOG.md` for the same version.
+3. Commit and push the change.
+4. Create a GitHub Release tagged `v<VERSION_NAME>`.
+5. Let the release workflow build and attach the signed APK.
+
 ## GitHub Actions
 
 The repository includes an Android CI workflow at `.github/workflows/android.yml`.
@@ -69,6 +90,7 @@ The workflow:
 - builds the debug APK,
 - runs JVM unit tests,
 - runs Android lint,
+- validates version metadata,
 - uploads the debug APK as a workflow artifact,
 - uploads the lint HTML report as a workflow artifact.
 
@@ -77,7 +99,7 @@ GitHub Actions run artifacts instead.
 
 The repository also includes `.github/workflows/android-release.yml`. It runs
 when a GitHub Release is published, builds a signed release APK, and uploads it
-to that GitHub Release.
+to that GitHub Release. The release tag must match `v<VERSION_NAME>`.
 
 Create these repository secrets before publishing a release:
 

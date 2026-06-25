@@ -8,6 +8,8 @@ val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS")
 val releaseKeyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD")
+val appVersionCode = providers.gradleProperty("VERSION_CODE").map(String::toInt)
+val appVersionName = providers.gradleProperty("VERSION_NAME")
 val hasReleaseSigningConfig = listOf(
     releaseKeystorePath,
     releaseKeystorePassword,
@@ -23,8 +25,8 @@ android {
         applicationId = "com.cashbacktracker"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode.get()
+        versionName = appVersionName.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

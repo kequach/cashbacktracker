@@ -36,6 +36,27 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Validate release version
+        id: version
+        run: |
+          version_name="$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2- | tr -d '\r' | xargs)"
+          version_code="$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2- | tr -d '\r' | xargs)"
+          expected_tag="v${version_name}"
+          if ! [[ "${version_name}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::VERSION_NAME must use semantic versioning, for example 0.1.0."
+            exit 1
+          fi
+          if ! [[ "${version_code}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::VERSION_CODE must be a positive integer."
+            exit 1
+          fi
+          if [[ "${GITHUB_REF_NAME}" != "${expected_tag}" ]]; then
+            echo "::error::Release tag must be ${expected_tag}, but got ${GITHUB_REF_NAME}."
+            exit 1
+          fi
+          echo "version_name=${version_name}" >> "${GITHUB_OUTPUT}"
+          echo "version_code=${version_code}" >> "${GITHUB_OUTPUT}"
+
       - name: Validate signing secrets
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -83,8 +104,7 @@ jobs:
       - name: Prepare release asset
         run: |
           mkdir -p release-artifacts
-          tag_name="${GITHUB_REF_NAME//\//-}"
-          cp app/build/outputs/apk/release/app-release.apk "release-artifacts/cashback-tracker-${tag_name}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "release-artifacts/cashback-tracker-v${{ steps.version.outputs.version_name }}-${{ steps.version.outputs.version_code }}.apk"
 
       - name: Upload APK to GitHub Release
         env:
