@@ -22,6 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
 
       - name: Set up JDK
@@ -38,6 +39,8 @@ jobs:
 
       - name: Validate release version
         id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           version_name="$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2- | tr -d '\r' | xargs)"
           version_code="$(grep '^VERSION_CODE=' gradle.properties | cut -d= -f2- | tr -d '\r' | xargs)"
@@ -50,12 +53,13 @@ jobs:
             echo "::error::VERSION_CODE must be a positive integer."
             exit 1
           fi
-          if [[ "${GITHUB_REF_NAME}" != "${expected_tag}" ]]; then
-            echo "::error::Release tag must be ${expected_tag}, but got ${GITHUB_REF_NAME}."
+          if [[ "${RELEASE_TAG}" != "${expected_tag}" ]]; then
+            echo "::error::Release tag must be ${expected_tag}, but got ${RELEASE_TAG}."
             exit 1
           fi
           echo "version_name=${version_name}" >> "${GITHUB_OUTPUT}"
           echo "version_code=${version_code}" >> "${GITHUB_OUTPUT}"
+          echo "release_tag=${RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Validate signing secrets
         env:
@@ -109,7 +113,7 @@ jobs:
       - name: Upload APK to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" release-artifacts/*.apk --clobber
+        run: gh release upload "${{ steps.version.outputs.release_tag }}" release-artifacts/*.apk --clobber
 
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v7
