@@ -352,10 +352,16 @@ private fun CashbackForm(
             valueSelector = CashbackEntry::productName,
         )
     }
-    val usedBankAccountIds = remember(form.cashbackUrl, form.productName, uiState.cashbacks) {
+    val usedPurchaseBankAccountIds = remember(form.cashbackUrl, form.productName, uiState.cashbacks) {
         uiState.cashbacks
             .filter { it.matchesCashbackAction(form) }
-            .mapNotNull { it.bankAccountId }
+            .mapNotNull { it.purchaseBankAccountId }
+            .toSet()
+    }
+    val usedPayoutBankAccountIds = remember(form.cashbackUrl, form.productName, uiState.cashbacks) {
+        uiState.cashbacks
+            .filter { it.matchesCashbackAction(form) }
+            .mapNotNull { it.payoutBankAccountId }
             .toSet()
     }
     val usedDeviceIds = remember(form.cashbackUrl, form.productName, uiState.cashbacks) {
@@ -407,16 +413,28 @@ private fun CashbackForm(
                 singleLine = true,
             )
             SelectionField(
-                label = "IBAN",
-                selectedId = form.bankAccountId,
+                label = "Kaufkonto (IBAN)",
+                selectedId = form.purchaseBankAccountId,
                 options = uiState.bankAccounts.map {
                     SelectionOption(
                         id = it.id,
                         label = it.nickname,
-                        isWarning = it.id in usedBankAccountIds,
+                        isWarning = it.id in usedPurchaseBankAccountIds,
                     )
                 },
-                onSelect = { id -> onFormChange { it.copy(bankAccountId = id) } },
+                onSelect = { id -> onFormChange { it.copy(purchaseBankAccountId = id) } },
+            )
+            SelectionField(
+                label = "Auszahlungskonto (IBAN)",
+                selectedId = form.payoutBankAccountId,
+                options = uiState.bankAccounts.map {
+                    SelectionOption(
+                        id = it.id,
+                        label = it.nickname,
+                        isWarning = it.id in usedPayoutBankAccountIds,
+                    )
+                },
+                onSelect = { id -> onFormChange { it.copy(payoutBankAccountId = id) } },
             )
             SelectionField(
                 label = "Geraet",
@@ -608,7 +626,14 @@ private fun CashbackEntryListItem(
     devices: List<CashbackDevice>,
     onStatusChange: (Long, CashbackStatus, CashbackStatus) -> Unit,
 ) {
-    val bankAccountName = bankAccounts.firstOrNull { it.id == cashback.bankAccountId }?.nickname ?: "-"
+    val purchaseBankAccountName = bankAccounts
+        .firstOrNull { it.id == cashback.purchaseBankAccountId }
+        ?.nickname
+        ?: "-"
+    val payoutBankAccountName = bankAccounts
+        .firstOrNull { it.id == cashback.payoutBankAccountId }
+        ?.nickname
+        ?: "-"
     val deviceName = devices.firstOrNull { it.id == cashback.deviceId }?.name ?: "-"
     val statusColors = cashback.status.listItemStatusColors()
     ListItem(
@@ -642,7 +667,7 @@ private fun CashbackEntryListItem(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "IBAN: $bankAccountName | Geraet: $deviceName",
+                    text = "Kauf: $purchaseBankAccountName | Auszahlung: $payoutBankAccountName | Geraet: $deviceName",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

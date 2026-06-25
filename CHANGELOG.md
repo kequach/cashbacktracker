@@ -4,6 +4,27 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 
 ---
 
+## v0.2.0 - 2026-06-26
+
+### New features
+
+- **Separate purchase and payout accounts** - cashback entries now store two bank account selections: the account used for the purchase and the account where the cashback should be paid out.
+- **Duplicate-use warnings per account role** - repeated promotions now mark previously used purchase accounts and payout accounts separately while keeping both selectable.
+
+### Improvements
+
+- **Data list account labels** - cashback rows now show purchase account, payout account, and device.
+- **CSV account columns** - exports now include separate nickname, IBAN, and account-holder columns for purchase account and payout account.
+- **Fresh local database baseline** - early-development local storage now uses a fresh `cashback-tracker-v1.db` file to avoid conflicts with older test installs that used the previous version-1 schema.
+
+### Docs
+
+- **End-user README** - README now focuses on installation, first steps, privacy, CSV export, and everyday app usage.
+- **Development guide** - build, CI, signing, release, and versioning details moved to `DEVELOPMENT.md`.
+- **Changelog and guardrails** - documentation now describes purchase account and payout account separately.
+
+---
+
 ## v0.1.0 - 2026-06-25
 
 Initial Android app release.
@@ -53,4 +74,3 @@ Initial Android app release.
 - **Modern Android stack** - Kotlin, Gradle Kotlin DSL, Jetpack Compose, Material 3, Room, DataStore, coroutines, Flow, and jsoup.
 - **Focused parser tests** - regression tests cover DealDoktor-style pages, official campaign domains, short-year date ranges, ISO date ranges, embedded script data, and struck-through outdated dates.
 - **Guardrails** - repository-level `AGENTS.md` documents product constraints, Android stack decisions, local data rules, security expectations, and verification commands.
-

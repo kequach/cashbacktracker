@@ -17,15 +17,19 @@ class ExportService {
             "Einloesestart",
             "Einloeseende",
             "Kaufpreis",
-            "IBAN-Spitzname",
-            "IBAN",
-            "Kontoinhaber",
+            "Kaufkonto-Spitzname",
+            "Kaufkonto-IBAN",
+            "Kaufkonto-Kontoinhaber",
+            "Auszahlungskonto-Spitzname",
+            "Auszahlungskonto-IBAN",
+            "Auszahlungskonto-Kontoinhaber",
             "Geraet",
             "Status",
             "Notizen",
         )
         val rows = cashbacks.map { cashback ->
-            val bankAccount = bankAccounts.firstOrNull { it.id == cashback.bankAccountId }
+            val purchaseBankAccount = bankAccounts.firstOrNull { it.id == cashback.purchaseBankAccountId }
+            val payoutBankAccount = bankAccounts.firstOrNull { it.id == cashback.payoutBankAccountId }
             val device = devices.firstOrNull { it.id == cashback.deviceId }
             listOf(
                 cashback.cashbackUrl,
@@ -33,9 +37,12 @@ class ExportService {
                 cashback.redemptionStart?.toString().orEmpty(),
                 cashback.redemptionEnd?.toString().orEmpty(),
                 MoneyFormatter.formatPlainMinor(cashback.purchasePriceMinor, cashback.currency),
-                bankAccount?.nickname.orEmpty(),
-                bankAccount?.iban.orEmpty(),
-                bankAccount?.accountHolder.orEmpty(),
+                purchaseBankAccount?.nickname.orEmpty(),
+                purchaseBankAccount?.iban.orEmpty(),
+                purchaseBankAccount?.accountHolder.orEmpty(),
+                payoutBankAccount?.nickname.orEmpty(),
+                payoutBankAccount?.iban.orEmpty(),
+                payoutBankAccount?.accountHolder.orEmpty(),
                 device?.name.orEmpty(),
                 cashback.status.label,
                 cashback.notes,

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1bf34f2eb45bced73637a4c8342962b8",
+    "identityHash": "0c89077cf8e08a97889a527d5f6ae34f",
     "entities": [
       {
         "tableName": "bank_accounts",
@@ -96,7 +96,7 @@
       },
       {
         "tableName": "cashback_entries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `cashbackUrl` TEXT NOT NULL, `productName` TEXT NOT NULL, `redemptionStartEpochDay` INTEGER, `redemptionEndEpochDay` INTEGER, `purchasePriceMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `bankAccountId` INTEGER, `deviceId` INTEGER, `notesCipherText` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, FOREIGN KEY(`bankAccountId`) REFERENCES `bank_accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`deviceId`) REFERENCES `cashback_devices`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `cashbackUrl` TEXT NOT NULL, `productName` TEXT NOT NULL, `redemptionStartEpochDay` INTEGER, `redemptionEndEpochDay` INTEGER, `purchasePriceMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `purchaseBankAccountId` INTEGER, `payoutBankAccountId` INTEGER, `deviceId` INTEGER, `notesCipherText` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, FOREIGN KEY(`purchaseBankAccountId`) REFERENCES `bank_accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`payoutBankAccountId`) REFERENCES `bank_accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`deviceId`) REFERENCES `cashback_devices`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -139,8 +139,13 @@
             "notNull": true
           },
           {
-            "fieldPath": "bankAccountId",
-            "columnName": "bankAccountId",
+            "fieldPath": "purchaseBankAccountId",
+            "columnName": "purchaseBankAccountId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "payoutBankAccountId",
+            "columnName": "payoutBankAccountId",
             "affinity": "INTEGER"
           },
           {
@@ -181,13 +186,22 @@
         },
         "indices": [
           {
-            "name": "index_cashback_entries_bankAccountId",
+            "name": "index_cashback_entries_purchaseBankAccountId",
             "unique": false,
             "columnNames": [
-              "bankAccountId"
+              "purchaseBankAccountId"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_cashback_entries_bankAccountId` ON `${TABLE_NAME}` (`bankAccountId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_cashback_entries_purchaseBankAccountId` ON `${TABLE_NAME}` (`purchaseBankAccountId`)"
+          },
+          {
+            "name": "index_cashback_entries_payoutBankAccountId",
+            "unique": false,
+            "columnNames": [
+              "payoutBankAccountId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_cashback_entries_payoutBankAccountId` ON `${TABLE_NAME}` (`payoutBankAccountId`)"
           },
           {
             "name": "index_cashback_entries_deviceId",
@@ -214,7 +228,18 @@
             "onDelete": "SET NULL",
             "onUpdate": "NO ACTION",
             "columns": [
-              "bankAccountId"
+              "purchaseBankAccountId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "bank_accounts",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "payoutBankAccountId"
             ],
             "referencedColumns": [
               "id"
@@ -236,7 +261,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1bf34f2eb45bced73637a4c8342962b8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0c89077cf8e08a97889a527d5f6ae34f')"
     ]
   }
 }

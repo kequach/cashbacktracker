@@ -19,6 +19,12 @@ class ExportServiceTest {
                     accountHolder = "Max Muster",
                     iban = "DE02120300000000202051",
                 ),
+                BankAccount(
+                    id = 8,
+                    nickname = "Cashback",
+                    accountHolder = "Erika Muster",
+                    iban = "DE02120300000000202052",
+                ),
             ),
             devices = listOf(CashbackDevice(id = 9, name = "Pixel Test", notes = "")),
             cashbacks = listOf(
@@ -30,7 +36,8 @@ class ExportServiceTest {
                     redemptionEnd = LocalDate.of(2026, 6, 30),
                     purchasePriceMinor = 249,
                     currency = "EUR",
-                    bankAccountId = 7,
+                    purchaseBankAccountId = 7,
+                    payoutBankAccountId = 8,
                     deviceId = 9,
                     notes = "Bon hochladen",
                     status = CashbackStatus.PAID,
@@ -43,6 +50,8 @@ class ExportServiceTest {
         assertTrue(csv.startsWith("\"Cashback-Link\";\"Produkt\";\"Einloesestart\""))
         assertTrue(csv.contains("\"Test Produkt\""))
         assertTrue(csv.contains("\"2,49 EUR\""))
+        assertTrue(csv.contains("\"Haushalt\""))
+        assertTrue(csv.contains("\"Cashback\""))
         assertTrue(csv.contains("\"Pixel Test\""))
         assertTrue(csv.contains("\"Ueberwiesen\""))
     }

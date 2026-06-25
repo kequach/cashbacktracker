@@ -31,7 +31,13 @@ data class CashbackDeviceEntity(
         ForeignKey(
             entity = BankAccountEntity::class,
             parentColumns = ["id"],
-            childColumns = ["bankAccountId"],
+            childColumns = ["purchaseBankAccountId"],
+            onDelete = ForeignKey.SET_NULL,
+        ),
+        ForeignKey(
+            entity = BankAccountEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["payoutBankAccountId"],
             onDelete = ForeignKey.SET_NULL,
         ),
         ForeignKey(
@@ -42,7 +48,8 @@ data class CashbackDeviceEntity(
         ),
     ],
     indices = [
-        Index("bankAccountId"),
+        Index("purchaseBankAccountId"),
+        Index("payoutBankAccountId"),
         Index("deviceId"),
         Index("status"),
     ],
@@ -55,7 +62,8 @@ data class CashbackEntryEntity(
     val redemptionEndEpochDay: Long?,
     val purchasePriceMinor: Long,
     val currency: String,
-    val bankAccountId: Long?,
+    val purchaseBankAccountId: Long?,
+    val payoutBankAccountId: Long?,
     val deviceId: Long?,
     val notesCipherText: String,
     val status: CashbackStatus,

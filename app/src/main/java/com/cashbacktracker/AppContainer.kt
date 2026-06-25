@@ -21,7 +21,7 @@ class AppContainer(context: Context) {
     private val database = Room.databaseBuilder(
         applicationContext,
         CashbackDatabase::class.java,
-        "cashback-tracker.db",
+        "cashback-tracker-v1.db",
     )
         .fallbackToDestructiveMigration(true)
         .fallbackToDestructiveMigrationOnDowngrade(true)

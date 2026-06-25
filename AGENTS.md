@@ -24,7 +24,8 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 - Build a native Android app for locally tracking cashback promotions.
 - The app has three primary areas:
   - Cashback input: URL-first entry, product/cashback name, redemption date
-    range, purchase price, selected IBAN, selected device, and notes.
+    range, purchase price, selected purchase account, selected payout account,
+    selected device, and notes.
   - Cashback data: list of all entered cashback records, status changes,
     milestone toggle, and CSV export.
   - Master data: devices used for cashback redemption and bank accounts with
@@ -131,7 +132,8 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 - Use German UI copy by default unless the user asks for another language.
 - Use clear tabs or adaptive navigation for input, data, and master data.
 - When the current cashback action was already entered, mark previously used
-  IBAN and device options as warnings while keeping them selectable.
+  purchase account, payout account, and device options as warnings while keeping
+  them selectable.
 - Cashback link and product inputs should show the three newest unique previous
   entries on focus/click, then filter suggestions while typing.
 - Make tables/lists dense and scannable, with search/filter/sort once data grows.

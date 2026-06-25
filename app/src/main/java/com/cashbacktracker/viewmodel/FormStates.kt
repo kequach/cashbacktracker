@@ -6,7 +6,8 @@ data class CashbackFormState(
     val redemptionStart: String = "",
     val redemptionEnd: String = "",
     val purchasePrice: String = "",
-    val bankAccountId: Long? = null,
+    val purchaseBankAccountId: Long? = null,
+    val payoutBankAccountId: Long? = null,
     val deviceId: Long? = null,
     val notes: String = "",
 )

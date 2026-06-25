@@ -198,7 +198,8 @@ class MainViewModel(
                 redemptionStart = redemptionStart,
                 redemptionEnd = redemptionEnd,
                 purchasePriceMinor = purchasePriceMinor,
-                bankAccountId = form.bankAccountId,
+                purchaseBankAccountId = form.purchaseBankAccountId,
+                payoutBankAccountId = form.payoutBankAccountId,
                 deviceId = form.deviceId,
                 notes = form.notes,
                 status = status,
@@ -263,11 +264,12 @@ class MainViewModel(
                 redemptionEnd = DateInput.format(entry.redemptionEnd),
                 purchasePrice = MoneyFormatter.formatPlainMinor(entry.purchasePriceMinor, entry.currency),
                 notes = entry.notes,
-                bankAccountId = null,
+                purchaseBankAccountId = null,
+                payoutBankAccountId = null,
                 deviceId = null,
             )
         }
-        message.value = "Vorlage uebernommen. Bitte IBAN und Geraet waehlen."
+        message.value = "Vorlage uebernommen. Bitte Kaufkonto, Auszahlungskonto und Geraet waehlen."
     }
 
     fun setMilestoneCelebrationsEnabled(enabled: Boolean) {
