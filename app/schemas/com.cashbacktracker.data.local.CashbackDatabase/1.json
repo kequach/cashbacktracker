@@ -2,56 +2,8 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b3f90e72628738ab87655658c0e676cf",
+    "identityHash": "1bf34f2eb45bced73637a4c8342962b8",
     "entities": [
-      {
-        "tableName": "profiles",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `category` TEXT NOT NULL, `displayName` TEXT NOT NULL, `notesCipherText` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "category",
-            "columnName": "category",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "displayName",
-            "columnName": "displayName",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "notesCipherText",
-            "columnName": "notesCipherText",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
-        }
-      },
       {
         "tableName": "bank_accounts",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nickname` TEXT NOT NULL, `accountHolderCipherText` TEXT NOT NULL, `ibanCipherText` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
@@ -144,7 +96,7 @@
       },
       {
         "tableName": "cashback_entries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `cashbackUrl` TEXT NOT NULL, `productName` TEXT NOT NULL, `redemptionStartEpochDay` INTEGER, `redemptionEndEpochDay` INTEGER, `purchasePriceMinor` INTEGER NOT NULL, `expectedCashbackMinor` INTEGER, `resultMinor` INTEGER, `currency` TEXT NOT NULL, `profileId` INTEGER, `bankAccountId` INTEGER, `deviceId` INTEGER, `notesCipherText` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, FOREIGN KEY(`profileId`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`bankAccountId`) REFERENCES `bank_accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`deviceId`) REFERENCES `cashback_devices`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `cashbackUrl` TEXT NOT NULL, `productName` TEXT NOT NULL, `redemptionStartEpochDay` INTEGER, `redemptionEndEpochDay` INTEGER, `purchasePriceMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `bankAccountId` INTEGER, `deviceId` INTEGER, `notesCipherText` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, FOREIGN KEY(`bankAccountId`) REFERENCES `bank_accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`deviceId`) REFERENCES `cashback_devices`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -181,25 +133,10 @@
             "notNull": true
           },
           {
-            "fieldPath": "expectedCashbackMinor",
-            "columnName": "expectedCashbackMinor",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "resultMinor",
-            "columnName": "resultMinor",
-            "affinity": "INTEGER"
-          },
-          {
             "fieldPath": "currency",
             "columnName": "currency",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "profileId",
-            "columnName": "profileId",
-            "affinity": "INTEGER"
           },
           {
             "fieldPath": "bankAccountId",
@@ -244,15 +181,6 @@
         },
         "indices": [
           {
-            "name": "index_cashback_entries_profileId",
-            "unique": false,
-            "columnNames": [
-              "profileId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_cashback_entries_profileId` ON `${TABLE_NAME}` (`profileId`)"
-          },
-          {
             "name": "index_cashback_entries_bankAccountId",
             "unique": false,
             "columnNames": [
@@ -282,17 +210,6 @@
         ],
         "foreignKeys": [
           {
-            "table": "profiles",
-            "onDelete": "SET NULL",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "profileId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
             "table": "bank_accounts",
             "onDelete": "SET NULL",
             "onUpdate": "NO ACTION",
@@ -319,7 +236,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b3f90e72628738ab87655658c0e676cf')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1bf34f2eb45bced73637a4c8342962b8')"
     ]
   }
 }

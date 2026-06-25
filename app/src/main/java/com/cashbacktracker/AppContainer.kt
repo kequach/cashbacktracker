@@ -24,6 +24,7 @@ class AppContainer(context: Context) {
         "cashback-tracker.db",
     )
         .fallbackToDestructiveMigration(true)
+        .fallbackToDestructiveMigrationOnDowngrade(true)
         .build()
 
     val cashbackRepository = CashbackRepository(database.cashbackDao(), cipher)
