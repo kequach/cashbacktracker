@@ -27,7 +27,7 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
     range, purchase price, selected purchase account, selected payout account,
     selected device, and notes.
   - Cashback data: list of all entered cashback records, status changes,
-    milestone toggle, and CSV export.
+    milestone toggle, CSV export, and CSV import.
   - Master data: devices used for cashback redemption and bank accounts with
     IBAN, account holder name, and optional nickname.
 - The cashback link is the first input when creating or editing a cashback
@@ -113,14 +113,15 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
   expected reimbursement amount. Do not add separate expected/result amount
   fields unless the user asks for partial cashback support.
 - Track status separately from money values. Valid cashback statuses are
-  `Geplant`, `Eingereicht`, and `Ueberwiesen`.
+  `Geplant`, `Eingereicht`, and `Überwiesen`.
 - Let users save a new cashback entry directly as planned or submitted.
 - In the cashback list, tapping a row should cycle status in this order:
-  `Geplant` -> `Eingereicht` -> `Ueberwiesen` -> `Geplant`.
-- Milestone animations should be driven by computed total reimbursed amount and
-  should trigger once per reached threshold unless the user chooses otherwise.
-  Default milestones are 100, 500, and 1000 EUR. Make milestone celebrations
-  optional behind a user-visible toggle.
+  `Geplant` -> `Eingereicht` -> `Überwiesen` -> `Geplant`.
+- Milestone animations should be driven by computed total reimbursed amount,
+  should trigger once per reached threshold unless the user chooses otherwise,
+  and should show progress toward the next threshold in the data tab.
+  Default milestones are 5, 10, 25, 50, 100, 150, 250, 500, 750, and 1000 EUR.
+  Make milestone celebrations optional behind a user-visible toggle.
 - Creating a cashback entry and marking an entry as paid/transferred should show
   a short celebration animation. Reverting paid status should not celebrate.
 - Preserve auditability for important user actions: creation date, last edit
@@ -165,8 +166,8 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 
 ## Documentation
 
-- Keep `README.md` aligned with user-facing behavior, CSV export, local-only
-  data handling, setup commands, and verification commands.
+- Keep `README.md` aligned with user-facing behavior, CSV export/import,
+  local-only data handling, setup commands, and verification commands.
 - Document any security-sensitive choice in the README or a dedicated
   architecture note before implementing it.
 - Do not add sample credentials, real IBANs, or real cashback links as fixtures.

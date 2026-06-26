@@ -1,95 +1,95 @@
 # Cashback Tracker
 
-Cashback Tracker ist eine Android-App zum lokalen Verwalten von Cashback- und
-Gratis-testen-Aktionen.
+Cashback Tracker is an Android app for tracking cashback and "try for free"
+promotions locally on your device.
 
-Die App hilft dir dabei, den Ueberblick zu behalten: Welche Aktion hast du
-geplant, welche wurde bereits eingereicht, und welches Cashback wurde schon
-ueberwiesen?
+It helps you keep track of which promotions are still planned, which ones have
+already been submitted, and which reimbursements have been paid out.
 
-## Funktionen
+## Features
 
-- Cashback-Aktionen mit Link, Produktname, Einloesezeitraum, Kaufpreis,
-  Kaufkonto, Auszahlungskonto, Geraet und Notizen speichern.
-- Aktionen als `Geplant`, `Eingereicht` oder `Ueberwiesen` markieren.
-- Status direkt in der Datenliste durch Antippen der Karte wechseln.
-- Cashback-Links auf Wunsch analysieren und Produktname sowie Zeitraum
-  automatisch vorausfuellen lassen, wenn die Seite genug Informationen liefert.
-- Bereits verwendete Konten und Geraete fuer dieselbe Aktion farblich markieren.
-- Wiederholte Eingaben schneller ausfuellen durch Vorschlaege aus bisherigen
-  Cashback-Aktionen.
-- Bankkonten und Geraete lokal als Stammdaten verwalten.
-- Cashback-Daten als CSV exportieren.
-- Optionale Jubelanimationen fuer neue Eintraege, ueberwiesene Cashbacks und
-  Erstattungsmeilensteine.
+- Save cashback promotions with link, product name, `Einlösezeitraum`, purchase
+  price, purchase account, payout account, device, and notes.
+- Mark promotions as `Geplant`, `Eingereicht`, or `Überwiesen`.
+- Change a promotion's status by tapping its card in the `Daten` list.
+- Analyze cashback links on demand and prefill product name and date range when
+  the page contains usable information.
+- Highlight accounts and devices that were already used for the same promotion.
+- Reuse previous entries faster through suggestions based on saved promotions.
+- Manage bank accounts and devices locally in `Stammdaten`.
+- Export and import cashback data as CSV.
+- Optional celebration animations for new entries, paid cashbacks, and
+  reimbursement milestones, with progress toward the next milestone.
 
 ## Installation
 
-Lade die APK aus dem neuesten GitHub Release herunter:
+Download the APK from the latest GitHub Release:
 
 [GitHub Releases](https://github.com/kequach/cashbacktracker/releases)
 
-Oeffne die APK auf deinem Android-Geraet und bestaetige die Installation. Je
-nach Android-Version musst du vorher erlauben, Apps aus dieser Quelle zu
-installieren.
+Open the APK on your Android device and confirm the installation. Depending on
+your Android version, you may need to allow installing apps from this source.
 
-Bei Updates installierst du einfach eine neuere APK ueber die vorhandene App.
-Deinstalliere die App nicht, wenn du deine lokalen Daten behalten moechtest.
+For updates, install the newer APK over the existing app. Do not uninstall the
+app if you want to keep your local data.
 
-## Erste Schritte
+## First Steps
 
-1. Oeffne den Tab `Stammdaten`.
-2. Lege deine Bankkonten an. Du kannst Spitznamen vergeben, damit du sie spaeter
-   schneller erkennst.
-3. Lege die Geraete an, mit denen du Cashback-Aktionen einloest.
-4. Oeffne den Tab `Eingabe`.
-5. Fuege den Cashback-Link ein und nutze optional `URL analysieren`.
-6. Ergaenze Produktname, Zeitraum, Kaufpreis, Kaufkonto, Auszahlungskonto,
-   Geraet und Notizen.
-7. Speichere die Aktion als `Geplant` oder `Eingereicht`.
-8. Im Tab `Daten` findest du alle Aktionen und kannst den Status per Antippen
-   weiterstellen.
+1. Open the `Stammdaten` tab.
+2. Add your bank accounts. Use nicknames so you can recognize them quickly.
+3. Add the devices you use to redeem cashback promotions.
+4. Open the `Eingabe` tab.
+5. Paste the cashback link and optionally tap `URL analysieren`.
+6. Fill in product name, date range, purchase price, `Kaufkonto`,
+   `Auszahlungskonto`, `Gerät`, and notes.
+7. Save the promotion as `Geplant` or `Eingereicht`.
+8. Open the `Daten` tab to see all promotions and advance their status by
+   tapping them.
 
 ## Status
 
-- `Geplant`: Du moechtest die Aktion noch kaufen oder einreichen.
-- `Eingereicht`: Du hast die Aktion eingereicht und wartest auf die Auszahlung.
-- `Ueberwiesen`: Das Cashback wurde ausgezahlt.
+- `Geplant`: You still want to buy or submit the promotion.
+- `Eingereicht`: You submitted the promotion and are waiting for the payout.
+- `Überwiesen`: The cashback has been paid out.
 
-Wenn du dich vertippst, tippe die Aktion einfach weiter an. Der Status wechselt
-der Reihe nach durch `Geplant`, `Eingereicht` und `Ueberwiesen`.
+If you tap by mistake, keep tapping the promotion. The status cycles through
+`Geplant`, `Eingereicht`, and `Überwiesen`.
 
-## Daten und Datenschutz
+## Data And Privacy
 
-- Alle App-Daten bleiben lokal auf deinem Geraet.
-- Es gibt keine Cloud-Synchronisierung, keine Werbung und keine Analytics.
-- IBANs, Kontoinhaber, Geraetenotizen und Cashback-Notizen werden verschluesselt
-  gespeichert.
-- Die URL-Analyse greift nur dann auf eine Webseite zu, wenn du aktiv
-  `URL analysieren` drueckst.
-- Der CSV-Export ist absichtlich unverschluesselt. Die exportierte Datei enthaelt
-  lesbare Cashback-Daten, IBANs und Notizen.
+- All app data stays local on your device.
+- There is no cloud sync, advertising, or analytics.
+- IBANs, account holder names, device notes, and cashback notes are stored
+  encrypted.
+- URL analysis only accesses a website when you actively tap `URL analysieren`.
+- CSV export is intentionally unencrypted. The exported file contains readable
+  cashback data, IBANs, and notes.
+- CSV import reads the same unencrypted backup format and can restore cashback
+  entries, bank accounts, and devices from that file.
 
-## CSV-Export
+## CSV Backup And Restore
 
-Im Tab `Daten` kannst du deine Eintraege als CSV exportieren. Nutze den Export,
-wenn du deine Daten in einer Tabellenkalkulation ansehen oder manuell sichern
-moechtest.
+In the `Daten` tab, you can export your entries as CSV. Use this if you want to
+view your data in a spreadsheet or create a manual backup.
 
-Behandle die CSV-Datei wie ein sensibles Dokument, weil sie lesbare Bankdaten und
-Notizen enthalten kann.
+You can also import a CSV backup from the same tab. Import creates cashback
+entries and restores missing bank accounts or devices when the CSV contains
+enough data for them.
 
-## Aktuelle Grenzen
+Treat CSV files like sensitive documents because they can contain readable bank
+details and notes.
 
-- Die App ist auf 100 Prozent Cashback ausgelegt. Der Kaufpreis ist deshalb auch
-  der erwartete Erstattungsbetrag.
-- Die URL-Analyse ist ein Best-effort-Helfer. Manche Webseiten liefern keine gut
-  auslesbaren Daten.
-- Es gibt aktuell keinen Import und keine Cloud-Synchronisierung.
-- Es gibt keine Passwortverwaltung, kein Autofill und keine Browser-Integration.
+## Current Limits
 
-## Weitere Informationen
+- The app is built for 100 percent cashback promotions. The purchase price is
+  therefore also the expected reimbursement amount.
+- URL analysis is a best-effort helper. Some websites do not expose data in a
+  way that can be parsed reliably.
+- There is no cloud sync.
+- There is no password manager, autofill, or browser integration.
 
-- Aenderungen pro Version: [CHANGELOG.md](CHANGELOG.md)
-- Technische Details fuer Entwicklung, Builds, Releases und CI:
+## More Information
+
+- Version history: [CHANGELOG.md](CHANGELOG.md)
+- Technical development, build, release, and CI details:
   [DEVELOPMENT.md](DEVELOPMENT.md)

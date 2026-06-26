@@ -20,6 +20,7 @@ data class MainUiState(
         celebrationsEnabled = true,
         shownMilestonesMinor = emptySet(),
     ),
+    val milestonesMinor: List<Long> = emptyList(),
     val paidTotalMinor: Long = 0,
     val message: String? = null,
     val isParsing: Boolean = false,

@@ -10,18 +10,24 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 
 - **Separate purchase and payout accounts** - cashback entries now store two bank account selections: the account used for the purchase and the account where the cashback should be paid out.
 - **Duplicate-use warnings per account role** - repeated promotions now mark previously used purchase accounts and payout accounts separately while keeping both selectable.
+- **CSV import** - the `Daten` tab can import the app's CSV backup format and recreate missing bank accounts or devices from the file.
+- **Action-period markers** - the data list highlights entries that are not yet in the `Aktionszeitraum` and planned entries whose `Aktionszeitraum` has already expired.
+- **Milestone progress** - the data tab now shows animated progress toward the next reimbursement milestone.
 
 ### Improvements
 
 - **Data list account labels** - cashback rows now show purchase account, payout account, and device.
 - **CSV account columns** - exports now include separate nickname, IBAN, and account-holder columns for purchase account and payout account.
+- **Expanded milestone thresholds** - milestones now include 5, 10, 25, 50, 100, 150, 250, 500, 750, and 1000 EUR.
+- **More visual milestone celebration** - milestone celebrations now include a larger animated card and a progress animation.
 - **Fresh local database baseline** - early-development local storage now uses a fresh `cashback-tracker-v1.db` file to avoid conflicts with older test installs that used the previous version-1 schema.
 
 ### Docs
 
-- **End-user README** - README now focuses on installation, first steps, privacy, CSV export, and everyday app usage.
+- **English end-user README** - README now focuses on installation, first steps, privacy, CSV export, and everyday app usage.
 - **Development guide** - build, CI, signing, release, and versioning details moved to `DEVELOPMENT.md`.
 - **Changelog and guardrails** - documentation now describes purchase account and payout account separately.
+- **German umlauts** - German UI terms now use umlauts consistently in the app and docs.
 
 ---
 
@@ -33,7 +39,7 @@ Initial Android app release.
 
 - **Local cashback tracking** - native Android app for tracking cashback promotions with product name, cashback URL, redemption date range, purchase price, IBAN, device, notes, and status.
 - **Three app areas** - `Eingabe` for creating cashback entries, `Daten` for all saved cashback records, and `Stammdaten` for bank accounts and devices.
-- **Cashback statuses** - entries can be saved as `Geplant` or `Eingereicht`, then cycled by tapping a data-list row through `Geplant`, `Eingereicht`, and `Ueberwiesen`.
+- **Cashback statuses** - entries can be saved as `Geplant` or `Eingereicht`, then cycled by tapping a data-list row through `Geplant`, `Eingereicht`, and `Überwiesen`.
 - **Local master data** - bank accounts store nickname, account holder, and IBAN; devices store name and notes.
 - **CSV export** - manual unencrypted CSV export for saved cashback data, with an explicit warning before writing readable data.
 - **Milestone celebrations** - optional EUR milestone animations for reimbursed totals, with default thresholds of 100, 500, and 1000 EUR.
@@ -45,7 +51,7 @@ Initial Android app release.
 
 - **User-triggered parser** - `URL analysieren` fetches HTTPS pages only after explicit user action and keeps manual editing available when parsing is incomplete.
 - **Product and date extraction** - best-effort parser fills product name and date-only redemption ranges from page title, headings, body text, meta data, image labels, and embedded script data.
-- **German cashback patterns** - supports common phrases such as `Aktionszeitraum`, `Kaufzeitraum`, `Teilnahmezeitraum`, `Einloeseschluss`, `Start ist am`, and `bis zum`.
+- **German cashback patterns** - supports common phrases such as `Aktionszeitraum`, `Kaufzeitraum`, `Teilnahmezeitraum`, `Einlöseschluss`, `Start ist am`, and `bis zum`.
 - **Fallback title parsing** - when a page cannot be read, the app derives a readable product hint from official campaign URLs or DealDoktor-style slugs.
 
 ### UI

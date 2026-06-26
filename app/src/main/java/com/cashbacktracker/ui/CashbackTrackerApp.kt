@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -41,6 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -122,6 +124,22 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
         }
     }
 
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                val csv = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)
+                        ?.bufferedReader(Charsets.UTF_8)
+                        ?.use { it.readText() }
+                        .orEmpty()
+                }
+                viewModel.importCashbackCsv(csv)
+            }
+        }
+    }
+
     LaunchedEffect(uiState.message) {
         val message = uiState.message ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message)
@@ -170,6 +188,16 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
                 modifier = Modifier.padding(padding),
                 onStatusChange = viewModel::updateCashbackStatus,
                 onMilestonesEnabledChange = viewModel::setMilestoneCelebrationsEnabled,
+                onImportClick = {
+                    importLauncher.launch(
+                        arrayOf(
+                            "text/*",
+                            "text/csv",
+                            "application/vnd.ms-excel",
+                            "application/octet-stream",
+                        ),
+                    )
+                },
                 onExportClick = { showExportWarning = true },
                 )
 
@@ -200,11 +228,11 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
     if (showExportWarning) {
         AlertDialog(
             onDismissRequest = { showExportWarning = false },
-            title = { Text("Unverschluesselter CSV-Export") },
+            title = { Text("Unverschlüsselter CSV-Export") },
             text = {
                 Text(
-                    "Der CSV-Export enthaelt Notizen, IBANs und Kontoinhaber lesbar im Klartext. " +
-                        "Speichere die Datei nur an einem vertrauenswuerdigen Ort.",
+                    "Der CSV-Export enthält Notizen, IBANs und Kontoinhaber lesbar im Klartext. " +
+                        "Speichere die Datei nur an einem vertrauenswürdigen Ort.",
                 )
             },
             confirmButton = {
@@ -271,8 +299,11 @@ private fun CashbackDataScreen(
     modifier: Modifier = Modifier,
     onStatusChange: (Long, CashbackStatus, CashbackStatus) -> Unit,
     onMilestonesEnabledChange: (Boolean) -> Unit,
+    onImportClick: () -> Unit,
     onExportClick: () -> Unit,
 ) {
+    val today = remember { LocalDate.now() }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -293,10 +324,22 @@ private fun CashbackDataScreen(
                     )
                     Text("Erstattet: ${MoneyFormatter.formatMinor(uiState.paidTotalMinor)}")
                 }
-                OutlinedButton(onClick = onExportClick) {
-                    Text("CSV")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onImportClick) {
+                        Text("Import")
+                    }
+                    OutlinedButton(onClick = onExportClick) {
+                        Text("Export")
+                    }
                 }
             }
+        }
+
+        item {
+            MilestoneProgressCard(
+                paidTotalMinor = uiState.paidTotalMinor,
+                milestonesMinor = uiState.milestonesMinor,
+            )
         }
 
         item {
@@ -314,7 +357,7 @@ private fun CashbackDataScreen(
         }
 
         if (uiState.cashbacks.isEmpty()) {
-            item { Text("Noch keine Cashback-Eintraege.") }
+            item { Text("Noch keine Cashback-Einträge.") }
         }
 
         items(uiState.cashbacks, key = { it.id }) { cashback ->
@@ -322,9 +365,77 @@ private fun CashbackDataScreen(
                 cashback = cashback,
                 bankAccounts = uiState.bankAccounts,
                 devices = uiState.devices,
+                today = today,
                 onStatusChange = onStatusChange,
             )
             HorizontalDivider()
+        }
+    }
+}
+
+@Composable
+private fun MilestoneProgressCard(
+    paidTotalMinor: Long,
+    milestonesMinor: List<Long>,
+) {
+    val sortedMilestones = milestonesMinor.sorted()
+    if (sortedMilestones.isEmpty()) return
+
+    val previousMilestone = sortedMilestones.lastOrNull { it <= paidTotalMinor } ?: 0L
+    val nextMilestone = sortedMilestones.firstOrNull { it > paidTotalMinor }
+    val targetProgress = if (nextMilestone == null) {
+        1f
+    } else {
+        ((paidTotalMinor - previousMilestone).toFloat() / (nextMilestone - previousMilestone).toFloat())
+            .coerceIn(0f, 1f)
+    }
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 900),
+        label = "milestone-progress",
+    )
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(
+                        text = "Meilenstein-Fortschritt",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = if (nextMilestone == null) {
+                            "Alle Meilensteine erreicht"
+                        } else {
+                            "Nächster Meilenstein: ${MoneyFormatter.formatPlainMinor(nextMilestone)}"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                Text(
+                    text = MoneyFormatter.formatPlainMinor(paidTotalMinor),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (nextMilestone != null) {
+                Text(
+                    text = "${MoneyFormatter.formatPlainMinor(nextMilestone - paidTotalMinor)} bis zum nächsten Meilenstein",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }
@@ -437,7 +548,7 @@ private fun CashbackForm(
                 onSelect = { id -> onFormChange { it.copy(payoutBankAccountId = id) } },
             )
             SelectionField(
-                label = "Geraet",
+                label = "Gerät",
                 selectedId = form.deviceId,
                 options = uiState.devices.map {
                     SelectionOption(
@@ -548,7 +659,7 @@ private fun DateRangeInput(
     onOpenPicker: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("Einloesezeitraum", style = MaterialTheme.typography.labelLarge)
+        Text("Einlösezeitraum", style = MaterialTheme.typography.labelLarge)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -574,7 +685,7 @@ private fun DateRangeInput(
             onClick = onOpenPicker,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Einloesezeitraum per Kalender waehlen")
+            Text("Einlösezeitraum per Kalender wählen")
         }
     }
 }
@@ -602,7 +713,7 @@ private fun CashbackDateRangeDialog(
                     )
                 },
             ) {
-                Text("Uebernehmen")
+                Text("Übernehmen")
             }
         },
         dismissButton = {
@@ -613,7 +724,7 @@ private fun CashbackDateRangeDialog(
     ) {
         DateRangePicker(
             state = state,
-            title = { Text("Einloesezeitraum") },
+            title = { Text("Einlösezeitraum") },
             headline = null,
         )
     }
@@ -624,6 +735,7 @@ private fun CashbackEntryListItem(
     cashback: CashbackEntry,
     bankAccounts: List<BankAccount>,
     devices: List<CashbackDevice>,
+    today: LocalDate,
     onStatusChange: (Long, CashbackStatus, CashbackStatus) -> Unit,
 ) {
     val purchaseBankAccountName = bankAccounts
@@ -636,6 +748,7 @@ private fun CashbackEntryListItem(
         ?: "-"
     val deviceName = devices.firstOrNull { it.id == cashback.deviceId }?.name ?: "-"
     val statusColors = cashback.status.listItemStatusColors()
+    val periodMarker = cashback.periodMarker(today)
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
@@ -666,8 +779,11 @@ private fun CashbackEntryListItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (periodMarker != null) {
+                    PeriodMarkerChip(periodMarker)
+                }
                 Text(
-                    text = "Kauf: $purchaseBankAccountName | Auszahlung: $payoutBankAccountName | Geraet: $deviceName",
+                    text = "Kauf: $purchaseBankAccountName | Auszahlung: $payoutBankAccountName | Gerät: $deviceName",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -697,6 +813,49 @@ private fun CashbackEntryListItem(
         },
     )
 }
+
+@Composable
+private fun PeriodMarkerChip(marker: ActionPeriodMarker) {
+    val containerColor = when (marker) {
+        ActionPeriodMarker.NOT_STARTED -> MaterialTheme.colorScheme.tertiaryContainer
+        ActionPeriodMarker.EXPIRED_NOT_SUBMITTED -> MaterialTheme.colorScheme.errorContainer
+    }
+    val contentColor = when (marker) {
+        ActionPeriodMarker.NOT_STARTED -> MaterialTheme.colorScheme.onTertiaryContainer
+        ActionPeriodMarker.EXPIRED_NOT_SUBMITTED -> MaterialTheme.colorScheme.onErrorContainer
+    }
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Text(
+            text = when (marker) {
+                ActionPeriodMarker.NOT_STARTED -> "Noch nicht im Aktionszeitraum"
+                ActionPeriodMarker.EXPIRED_NOT_SUBMITTED -> "Aktionszeitraum abgelaufen - noch nicht eingereicht"
+            },
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+private enum class ActionPeriodMarker {
+    NOT_STARTED,
+    EXPIRED_NOT_SUBMITTED,
+}
+
+private fun CashbackEntry.periodMarker(today: LocalDate): ActionPeriodMarker? =
+    when {
+        redemptionStart != null && today.isBefore(redemptionStart) -> ActionPeriodMarker.NOT_STARTED
+        status == CashbackStatus.PLANNED &&
+            redemptionEnd != null &&
+            today.isAfter(redemptionEnd) -> ActionPeriodMarker.EXPIRED_NOT_SUBMITTED
+        else -> null
+    }
 
 private fun CashbackStatus.nextStatus(): CashbackStatus =
     when (this) {
@@ -748,7 +907,7 @@ private fun MasterDataScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Bankdaten und Geraete",
+            text = "Bankdaten und Geräte",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
         )
@@ -803,11 +962,11 @@ private fun DeviceForm(
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Geraet", style = MaterialTheme.typography.titleMedium)
+            Text("Gerät", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = form.name,
                 onValueChange = { value -> onChange { it.copy(name = value) } },
-                label = { Text("Geraetename") },
+                label = { Text("Gerätename") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
@@ -819,7 +978,7 @@ private fun DeviceForm(
                 minLines = 2,
             )
             Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
-                Text("Geraet speichern")
+                Text("Gerät speichern")
             }
         }
     }
@@ -831,7 +990,7 @@ private fun ExistingMasterData(uiState: MainUiState) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Gespeicherte Stammdaten", style = MaterialTheme.typography.titleMedium)
             Text("IBANs: ${uiState.bankAccounts.joinToString { it.nickname }.ifBlank { "-" }}")
-            Text("Geraete: ${uiState.devices.joinToString { it.name }.ifBlank { "-" }}")
+            Text("Geräte: ${uiState.devices.joinToString { it.name }.ifBlank { "-" }}")
         }
     }
 }
@@ -852,7 +1011,7 @@ private fun SelectionField(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = selectedOption?.label ?: "Nicht ausgewaehlt",
+                text = selectedOption?.label ?: "Nicht ausgewählt",
                 color = if (selectedOption?.isWarning == true) {
                     MaterialTheme.colorScheme.error
                 } else {
@@ -865,7 +1024,7 @@ private fun SelectionField(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("Nicht ausgewaehlt") },
+                text = { Text("Nicht ausgewählt") },
                 onClick = {
                     onSelect(null)
                     expanded = false
@@ -885,7 +1044,7 @@ private fun SelectionField(
                             )
                             if (option.isWarning) {
                                 Text(
-                                    text = "Bereits fuer diese Aktion verwendet",
+                                    text = "Bereits für diese Aktion verwendet",
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall,
                                 )
@@ -924,10 +1083,9 @@ private fun CelebrationOverlay(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (milestoneMinor != null) {
-            TransientCelebrationCard(
+            MilestoneCelebrationCard(
                 eventKey = "milestone-$milestoneMinor",
-                title = "Meilenstein erreicht",
-                body = "Du hast ${MoneyFormatter.formatPlainMinor(milestoneMinor)} an Erstattungen erreicht.",
+                amountMinor = milestoneMinor,
                 onFinished = onMilestoneFinished,
             )
         }
@@ -936,13 +1094,102 @@ private fun CelebrationOverlay(
                 eventKey = "celebration-${celebrationEvent.id}",
                 title = when (celebrationEvent.kind) {
                     CelebrationKind.CREATED -> "Cashback angelegt"
-                    CelebrationKind.PAID -> "Cashback ueberwiesen"
+                    CelebrationKind.PAID -> "Cashback überwiesen"
                 },
                 body = when (celebrationEvent.kind) {
                     CelebrationKind.CREATED -> "Die Aktion ist gespeichert."
                     CelebrationKind.PAID -> "Diese Erstattung ist erledigt."
                 },
                 onFinished = onCelebrationFinished,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MilestoneCelebrationCard(
+    eventKey: String,
+    amountMinor: Long,
+    onFinished: () -> Unit,
+) {
+    val animationsEnabled = ValueAnimator.areAnimatorsEnabled()
+    var targetProgress by remember(eventKey) { mutableStateOf(if (animationsEnabled) 0f else 1f) }
+    LaunchedEffect(eventKey) {
+        targetProgress = 1f
+        delay(3_200)
+        onFinished()
+    }
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 1_150),
+        label = "milestone-celebration-progress",
+    )
+
+    val scale: Float
+    val rotation: Float
+    if (animationsEnabled) {
+        val transition = rememberInfiniteTransition(label = eventKey)
+        scale = transition.animateFloat(
+            initialValue = 0.92f,
+            targetValue = 1.24f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 560),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "milestone-scale",
+        ).value
+        rotation = transition.animateFloat(
+            initialValue = -10f,
+            targetValue = 10f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 460),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "milestone-rotation",
+        ).value
+    } else {
+        scale = 1f
+        rotation = 0f
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Celebration,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .scale(scale)
+                        .rotate(rotation),
+                )
+                Column {
+                    Text(
+                        text = "Meilenstein erreicht",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "${MoneyFormatter.formatPlainMinor(amountMinor)} Erstattungen geschafft.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cashbacktracker.AppContainer
+import com.cashbacktracker.data.export.CashbackCsvBankAccount
 import com.cashbacktracker.data.export.ExportService
+import com.cashbacktracker.data.model.BankAccount
 import com.cashbacktracker.data.model.CashbackStatus
 import com.cashbacktracker.data.parser.CashbackPromotionParser
 import com.cashbacktracker.data.repository.BankAccountRepository
@@ -74,6 +76,7 @@ class MainViewModel(
             bankAccounts = snapshot.bankAccounts,
             devices = snapshot.devices,
             milestoneSettings = settings,
+            milestonesMinor = MILESTONES_MINOR,
             paidTotalMinor = snapshot.cashbacks
                 .filter { it.status == CashbackStatus.PAID }
                 .sumOf { it.purchasePriceMinor },
@@ -127,7 +130,7 @@ class MainViewModel(
     fun analyzeCurrentCashbackUrl() {
         val url = cashbackForm.value.cashbackUrl.trim()
         if (!url.startsWith("https://", ignoreCase = true)) {
-            message.value = "Bitte zuerst einen gueltigen HTTPS-Link einfuegen."
+            message.value = "Bitte zuerst einen gültigen HTTPS-Link einfügen."
             return
         }
 
@@ -152,7 +155,7 @@ class MainViewModel(
                         )
                     }
                     message.value = if (hasPageData) {
-                        "URL wurde analysiert. Bitte Felder pruefen."
+                        "URL wurde analysiert. Bitte Felder prüfen."
                     } else {
                         "Keine Aktionsdaten gefunden. Produkttitel wurde aus dem Link abgeleitet."
                     }
@@ -228,13 +231,13 @@ class MainViewModel(
     fun saveDevice() {
         val form = deviceForm.value
         if (form.name.isBlank()) {
-            message.value = "Geraetename ist ein Pflichtfeld."
+            message.value = "Gerätename ist ein Pflichtfeld."
             return
         }
         viewModelScope.launch {
             deviceRepository.addDevice(form.name, form.notes)
             deviceForm.value = DeviceFormState()
-            message.value = "Geraet wurde gespeichert."
+            message.value = "Gerät wurde gespeichert."
         }
     }
 
@@ -269,7 +272,7 @@ class MainViewModel(
                 deviceId = null,
             )
         }
-        message.value = "Vorlage uebernommen. Bitte Kaufkonto, Auszahlungskonto und Geraet waehlen."
+        message.value = "Vorlage übernommen. Bitte Kaufkonto, Auszahlungskonto und Gerät wählen."
     }
 
     fun setMilestoneCelebrationsEnabled(enabled: Boolean) {
@@ -295,8 +298,85 @@ class MainViewModel(
         )
     }
 
+    fun importCashbackCsv(csv: String) {
+        viewModelScope.launch {
+            runCatching { importCashbacks(csv) }
+                .onSuccess { importedCount ->
+                    message.value = if (importedCount == 0) {
+                        "Keine importierbaren Einträge gefunden."
+                    } else {
+                        "$importedCount Cashback-Einträge importiert."
+                    }
+                }
+                .onFailure {
+                    message.value = "CSV konnte nicht importiert werden."
+                }
+        }
+    }
+
     fun clearMessage() {
         message.value = null
+    }
+
+    private suspend fun importCashbacks(csv: String): Int {
+        val rows = exportService.parseCashbackCsv(csv)
+        if (rows.isEmpty()) return 0
+
+        val snapshot = repositorySnapshot.first()
+        val bankAccountIdsByKey = snapshot.bankAccounts.toBankAccountIdMap()
+        val deviceIdsByKey = snapshot.devices
+            .associate { it.name.normalizedImportKey() to it.id }
+            .toMutableMap()
+        var importedCount = 0
+
+        rows.forEach { row ->
+            val purchaseBankAccountId = row.purchaseBankAccount.resolveBankAccountId(bankAccountIdsByKey)
+            val payoutBankAccountId = row.payoutBankAccount.resolveBankAccountId(bankAccountIdsByKey)
+            val deviceId = row.deviceName.resolveDeviceId(deviceIdsByKey)
+
+            cashbackRepository.addCashback(
+                cashbackUrl = row.cashbackUrl,
+                productName = row.productName,
+                redemptionStart = row.redemptionStart,
+                redemptionEnd = row.redemptionEnd,
+                purchasePriceMinor = row.purchasePriceMinor,
+                purchaseBankAccountId = purchaseBankAccountId,
+                payoutBankAccountId = payoutBankAccountId,
+                deviceId = deviceId,
+                notes = row.notes,
+                status = row.status,
+            )
+            importedCount += 1
+        }
+
+        return importedCount
+    }
+
+    private suspend fun CashbackCsvBankAccount?.resolveBankAccountId(
+        idsByKey: MutableMap<String, Long>,
+    ): Long? {
+        if (this == null || (iban.isBlank() && accountHolder.isBlank())) return null
+        val key = importKey() ?: return null
+        idsByKey[key]?.let { return it }
+
+        val id = bankAccountRepository.addBankAccount(
+            nickname = nickname,
+            accountHolder = accountHolder,
+            iban = iban,
+        )
+        idsByKey[key] = id
+        return id
+    }
+
+    private suspend fun String?.resolveDeviceId(idsByKey: MutableMap<String, Long>): Long? {
+        val name = this?.trim().orEmpty()
+        if (name.isBlank()) return null
+        val key = name.normalizedImportKey()
+        idsByKey[key]?.let { return it }
+
+        val id = deviceRepository.addDevice(name = name, notes = "")
+        idsByKey[key] = id
+        return id
     }
 
     class Factory(
@@ -316,6 +396,48 @@ class MainViewModel(
     }
 
     private companion object {
-        val MILESTONES_MINOR = listOf(10_000L, 50_000L, 100_000L)
+        val MILESTONES_MINOR = listOf(
+            500L,
+            1_000L,
+            2_500L,
+            5_000L,
+            10_000L,
+            15_000L,
+            25_000L,
+            50_000L,
+            75_000L,
+            100_000L,
+        )
     }
 }
+
+private fun List<BankAccount>.toBankAccountIdMap(): MutableMap<String, Long> {
+    val idsByKey = mutableMapOf<String, Long>()
+    forEach { account ->
+        account.iban.normalizedIbanImportKey()?.let { idsByKey.putIfAbsent(it, account.id) }
+        account.textImportKey()?.let { idsByKey.putIfAbsent(it, account.id) }
+    }
+    return idsByKey
+}
+
+private fun BankAccount.textImportKey(): String? =
+    bankAccountTextImportKey(nickname, accountHolder)
+
+private fun CashbackCsvBankAccount.importKey(): String? =
+    iban.normalizedIbanImportKey() ?: bankAccountTextImportKey(nickname, accountHolder)
+
+private fun bankAccountTextImportKey(nickname: String, accountHolder: String): String? {
+    val nicknameKey = nickname.normalizedImportKey()
+    val holderKey = accountHolder.normalizedImportKey()
+    if (nicknameKey.isBlank() && holderKey.isBlank()) return null
+    return "account:$nicknameKey|$holderKey"
+}
+
+private fun String.normalizedIbanImportKey(): String? =
+    filterNot(Char::isWhitespace)
+        .uppercase()
+        .takeIf { it.isNotBlank() }
+        ?.let { "iban:$it" }
+
+private fun String.normalizedImportKey(): String =
+    trim().lowercase()

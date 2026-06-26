@@ -19,9 +19,9 @@ class BankAccountRepository(
     val bankAccounts: Flow<List<BankAccount>> = bankAccountDao.observeBankAccounts()
         .map { entities -> entities.map { it.toDomain(cipher) } }
 
-    suspend fun addBankAccount(nickname: String, accountHolder: String, iban: String) {
+    suspend fun addBankAccount(nickname: String, accountHolder: String, iban: String): Long {
         val now = System.currentTimeMillis()
-        bankAccountDao.insert(
+        return bankAccountDao.insert(
             BankAccountEntity(
                 nickname = nickname.trim().ifBlank { iban.takeLast(4).padStart(4, '*') },
                 accountHolderCipherText = cipher.encryptNullable(accountHolder.trim()),
@@ -40,9 +40,9 @@ class DeviceRepository(
     val devices: Flow<List<CashbackDevice>> = deviceDao.observeDevices()
         .map { entities -> entities.map { it.toDomain(cipher) } }
 
-    suspend fun addDevice(name: String, notes: String) {
+    suspend fun addDevice(name: String, notes: String): Long {
         val now = System.currentTimeMillis()
-        deviceDao.insert(
+        return deviceDao.insert(
             CashbackDeviceEntity(
                 name = name.trim(),
                 notesCipherText = cipher.encryptNullable(notes.trim()),

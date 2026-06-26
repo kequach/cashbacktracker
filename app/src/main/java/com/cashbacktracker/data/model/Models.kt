@@ -5,7 +5,7 @@ import java.time.LocalDate
 enum class CashbackStatus(val label: String) {
     PLANNED("Geplant"),
     SUBMITTED("Eingereicht"),
-    PAID("Ueberwiesen"),
+    PAID("Überwiesen"),
 }
 
 data class BankAccount(
