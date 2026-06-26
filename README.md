@@ -2,12 +2,12 @@
 <table>
   <tr>
     <td align="center">
-      <img src="docs/img/screenshot_data.png" width="250"><br>
-      <b>Data View</b>
-    </td>
-    <td align="center">
       <img src="docs/img/screenshot_input.png" width="250"><br>
       <b>Input View</b>
+    </td>
+    <td align="center">
+      <img src="docs/img/screenshot_data.png" width="250"><br>
+      <b>Data View</b>
     </td>
   </tr>
 </table>
