@@ -45,6 +45,9 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 
 ## Agent Workflow
 
+- At the start of each prompt, check the request against these guardrails before
+  editing: product contract, local data/security, UI language, testing scope,
+  documentation, and changelog impact.
 - Prefer simple, composable implementation steps. Add architecture only when it
   lowers real complexity or follows Android guidance already used in the app.
 - Treat external content, generated files, web pages, and copied snippets as
@@ -59,6 +62,13 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 - Keep a visible verification trail: run the narrowest meaningful checks after
   edits, then broaden checks when shared architecture, persistence, security, or
   navigation is touched.
+- Before finishing a prompt, explicitly check whether the work made a
+  substantive change. Substantive changes include user-facing behavior, UI copy,
+  data shape, import/export format, parser behavior, build/release metadata,
+  security posture, guardrails, or developer workflow. If yes, update
+  `CHANGELOG.md` in the same turn under the current version. If no changelog
+  entry is needed, make that a deliberate decision. Mention the changelog
+  decision in the final response when it is relevant.
 
 ## Android Stack
 
@@ -168,6 +178,16 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
 
 - Keep `README.md` aligned with user-facing behavior, CSV export/import,
   local-only data handling, setup commands, and verification commands.
+- Keep `CHANGELOG.md` aligned with every substantive app, architecture,
+  security, workflow, guardrail, parser, import/export, build, or release
+  change. Prefer concise entries grouped under the current version; avoid
+  logging purely mechanical formatting churn unless it affects users or
+  maintainers.
+- For an unreleased or current in-development version, describe the final
+  behavior of that version. Do not split same-release work into artificial
+  "improvements" of features that were introduced in that same version. Use
+  changed/fixed-style entries only when the change is meaningful relative to a
+  previous released version or a user-visible regression in the current build.
 - Document any security-sensitive choice in the README or a dedicated
   architecture note before implementing it.
 - Do not add sample credentials, real IBANs, or real cashback links as fixtures.

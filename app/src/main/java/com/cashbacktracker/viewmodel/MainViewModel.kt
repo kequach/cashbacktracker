@@ -9,6 +9,7 @@ import com.cashbacktracker.data.export.ExportService
 import com.cashbacktracker.data.model.BankAccount
 import com.cashbacktracker.data.model.CashbackStatus
 import com.cashbacktracker.data.parser.CashbackPromotionParser
+import com.cashbacktracker.data.parser.normalizeCashbackUrl
 import com.cashbacktracker.data.repository.BankAccountRepository
 import com.cashbacktracker.data.repository.CashbackRepository
 import com.cashbacktracker.data.repository.DeviceRepository
@@ -137,15 +138,16 @@ class MainViewModel(
     }
 
     fun analyzeCurrentCashbackUrl() {
-        val url = cashbackForm.value.cashbackUrl.trim()
-        if (!url.startsWith("https://", ignoreCase = true)) {
-            message.value = "Bitte zuerst einen gültigen HTTPS-Link einfügen."
+        val url = normalizeCashbackUrl(cashbackForm.value.cashbackUrl)
+        if (url == null) {
+            message.value = "Bitte zuerst einen gültigen Cashback-Link eingeben."
             return
         }
 
         viewModelScope.launch {
             isParsing.value = true
             message.value = null
+            cashbackForm.update { form -> form.copy(cashbackUrl = url) }
             val fallback = parser.parseUrlFallback(url)
             runCatching { parser.parse(url) }
                 .onSuccess { parsed ->
@@ -188,6 +190,7 @@ class MainViewModel(
         val purchasePriceMinor = MoneyFormatter.parseMinor(form.purchasePrice)
         val redemptionStart = DateInput.parse(form.redemptionStart)
         val redemptionEnd = DateInput.parse(form.redemptionEnd)
+        val cashbackUrl = normalizeCashbackUrl(form.cashbackUrl) ?: form.cashbackUrl.trim()
         if (form.cashbackUrl.isBlank() || form.productName.isBlank() || purchasePriceMinor == null) {
             message.value = "Link, Produkt und Kaufpreis sind Pflichtfelder."
             return
@@ -205,7 +208,7 @@ class MainViewModel(
 
         viewModelScope.launch {
             cashbackRepository.addCashback(
-                cashbackUrl = form.cashbackUrl,
+                cashbackUrl = cashbackUrl,
                 productName = form.productName,
                 redemptionStart = redemptionStart,
                 redemptionEnd = redemptionEnd,

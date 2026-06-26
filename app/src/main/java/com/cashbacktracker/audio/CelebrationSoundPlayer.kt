@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.io.Closeable
 import kotlin.math.PI
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -57,12 +58,16 @@ class CelebrationSoundPlayer : Closeable {
             )
         }
         val samples = notes.renderSamples()
-        val bytes = samples.toPcm16LittleEndian()
+        val minBufferSize = AudioTrack.getMinBufferSize(
+            SAMPLE_RATE,
+            AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+        )
         val audioTrack = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build(),
             )
             .setAudioFormat(
@@ -72,14 +77,25 @@ class CelebrationSoundPlayer : Closeable {
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build(),
             )
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .setBufferSizeInBytes(bytes.size)
+            .setTransferMode(AudioTrack.MODE_STREAM)
+            .setBufferSizeInBytes(max(minBufferSize, samples.size * BYTES_PER_SAMPLE))
             .build()
 
         try {
-            audioTrack.write(bytes, 0, bytes.size)
             audioTrack.play()
+            var offset = 0
+            while (offset < samples.size) {
+                val written = audioTrack.write(
+                    samples,
+                    offset,
+                    samples.size - offset,
+                    AudioTrack.WRITE_BLOCKING,
+                )
+                if (written <= 0) break
+                offset += written
+            }
             Thread.sleep(notes.sumOf { it.durationMs + it.gapMs }.toLong() + 90L)
+            audioTrack.stop()
         } finally {
             audioTrack.release()
         }
@@ -115,18 +131,8 @@ class CelebrationSoundPlayer : Closeable {
         return output
     }
 
-    private fun ShortArray.toPcm16LittleEndian(): ByteArray {
-        val bytes = ByteArray(size * 2)
-        forEachIndexed { index, sample ->
-            val value = sample.toInt()
-            val byteIndex = index * 2
-            bytes[byteIndex] = (value and 0xFF).toByte()
-            bytes[byteIndex + 1] = ((value shr 8) and 0xFF).toByte()
-        }
-        return bytes
-    }
-
     private companion object {
         const val SAMPLE_RATE = 44_100
+        const val BYTES_PER_SAMPLE = 2
     }
 }

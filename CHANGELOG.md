@@ -6,21 +6,19 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 
 ## v0.2.0 - 2026-06-26
 
-### New features
+### User-facing features
 
-- **Separate purchase and payout accounts** - cashback entries now store two bank account selections: the account used for the purchase and the account where the cashback should be paid out.
-- **Duplicate-use warnings per account role** - repeated promotions now mark previously used purchase accounts and payout accounts separately while keeping both selectable.
+- **Separate purchase and payout accounts** - cashback entries now store the purchase account and payout account separately; data rows and CSV exports show separate nickname, IBAN, and account-holder columns for both account roles.
+- **Duplicate-use warnings per account role** - repeated promotions mark previously used purchase accounts, payout accounts, and devices while keeping those options selectable.
 - **CSV import** - the `Daten` tab can import the app's CSV backup format and recreate missing bank accounts or devices from the file.
 - **Action-period markers** - the data list highlights entries that are not yet in the `Aktionszeitraum` and planned entries whose `Aktionszeitraum` has already expired.
-- **Milestone progress** - the data tab now shows animated progress toward the next reimbursement milestone.
-- **Celebration queue and sounds** - celebration cards now stack with spacing instead of overlapping, and paid cashbacks plus milestones play short original reward sounds.
+- **Milestone progress and celebrations** - the data tab shows animated progress from the last reached milestone toward the next one, with milestone thresholds at 5, 10, 25, 50, 100, 150, 250, 500, 750, and 1000 EUR.
+- **Celebration queue and sounds** - celebration cards stack with spacing instead of overlapping; paid cashbacks and milestones play short original reward sounds through the Android media audio stream.
+- **Cashback URL normalization** - the parser accepts cashback links without an `https://` prefix and normalizes them before parsing or saving.
+- **Selection focus handling** - dropdown suggestions, account/device selections, and date-picker actions clear text input focus so the keyboard does not reopen unexpectedly.
 
-### Improvements
+### Build and data maintenance
 
-- **Data list account labels** - cashback rows now show purchase account, payout account, and device.
-- **CSV account columns** - exports now include separate nickname, IBAN, and account-holder columns for purchase account and payout account.
-- **Expanded milestone thresholds** - milestones now include 5, 10, 25, 50, 100, 150, 250, 500, 750, and 1000 EUR.
-- **More visual milestone celebration** - milestone celebrations now include a larger animated card and a progress animation.
 - **APK size optimization** - release builds now use R8 minification and resource shrinking, unused dependencies were removed, and Material icon usage was replaced with small local vector assets.
 - **Fresh local database baseline** - early-development local storage now uses a fresh `cashback-tracker-v1.db` file to avoid conflicts with older test installs that used the previous version-1 schema.
 
@@ -29,6 +27,8 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 - **English end-user README** - README now focuses on installation, first steps, privacy, CSV export, and everyday app usage.
 - **Development guide** - build, CI, signing, release, and versioning details moved to `DEVELOPMENT.md`.
 - **Changelog and guardrails** - documentation now describes purchase account and payout account separately.
+- **Prompt-level changelog guardrail** - `AGENTS.md` now requires a changelog impact check for every prompt and a `CHANGELOG.md` update for substantive changes.
+- **Changelog grouping guardrail** - `AGENTS.md` now requires current-release changelog entries to describe final behavior instead of artificial same-release improvements.
 - **German umlauts** - German UI terms now use umlauts consistently in the app and docs.
 
 ---

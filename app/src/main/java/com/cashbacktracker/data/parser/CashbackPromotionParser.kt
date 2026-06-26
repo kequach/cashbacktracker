@@ -17,6 +17,23 @@ interface PromotionPageFetcher {
     suspend fun fetch(url: String): String
 }
 
+fun normalizeCashbackUrl(input: String): String? {
+    val trimmed = input.trim()
+    if (trimmed.isBlank()) return null
+
+    val withHttpsScheme = when {
+        trimmed.startsWith("https://", ignoreCase = true) -> trimmed
+        trimmed.startsWith("http://", ignoreCase = true) -> "https://" + trimmed.substringAfter("://")
+        "://" !in trimmed -> "https://$trimmed"
+        else -> return null
+    }
+
+    val parsedUrl = runCatching { URL(withHttpsScheme) }.getOrNull() ?: return null
+    return parsedUrl
+        .takeIf { it.protocol.equals("https", ignoreCase = true) && it.host.isNotBlank() }
+        ?.toString()
+}
+
 class HttpPromotionPageFetcher : PromotionPageFetcher {
     override suspend fun fetch(url: String): String = withContext(Dispatchers.IO) {
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -58,9 +75,10 @@ class CashbackPromotionParser(
     private val fetcher: PromotionPageFetcher,
 ) {
     suspend fun parse(url: String): ParsedCashbackPromotion {
-        val html = fetcher.fetch(url)
+        val normalizedUrl = normalizeCashbackUrl(url) ?: throw IOException("Invalid HTTPS URL")
+        val html = fetcher.fetch(normalizedUrl)
         return withContext(Dispatchers.Default) {
-            parseHtml(html, url)
+            parseHtml(html, normalizedUrl)
         }
     }
 
@@ -105,7 +123,7 @@ class CashbackPromotionParser(
     }
 
     fun parseUrlFallback(url: String): ParsedCashbackPromotion =
-        ParsedCashbackPromotion(productName = titleFromUrl(url))
+        ParsedCashbackPromotion(productName = titleFromUrl(normalizeCashbackUrl(url) ?: url))
 
     private fun titleFromUrl(url: String): String? {
         val parsedUrl = runCatching { URL(url) }.getOrNull() ?: return null

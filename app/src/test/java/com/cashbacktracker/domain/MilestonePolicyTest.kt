@@ -6,7 +6,7 @@ import org.junit.Test
 
 class MilestonePolicyTest {
     @Test
-    fun calculatesProgressTowardNextMilestoneFromTotalPaidAmount() {
+    fun calculatesProgressTowardNextMilestoneFromLastMilestone() {
         val progress = MilestonePolicy.calculateProgress(
             paidTotalMinor = 2_100L,
             milestonesMinor = listOf(500L, 1_000L, 2_500L),
@@ -14,11 +14,11 @@ class MilestonePolicyTest {
 
         assertEquals(2_500L, progress.nextMilestoneMinor)
         assertEquals(400L, progress.remainingMinor)
-        assertEquals(0.84f, progress.progress, 0.001f)
+        assertEquals(0.733f, progress.progress, 0.001f)
     }
 
     @Test
-    fun doesNotResetProgressToZeroWhenMilestoneWasJustReached() {
+    fun resetsProgressToZeroWhenMilestoneWasJustReached() {
         val progress = MilestonePolicy.calculateProgress(
             paidTotalMinor = 1_000L,
             milestonesMinor = listOf(500L, 1_000L, 2_500L),
@@ -26,7 +26,7 @@ class MilestonePolicyTest {
 
         assertEquals(2_500L, progress.nextMilestoneMinor)
         assertEquals(1_500L, progress.remainingMinor)
-        assertEquals(0.4f, progress.progress, 0.001f)
+        assertEquals(0f, progress.progress, 0.001f)
     }
 
     @Test
@@ -43,7 +43,7 @@ class MilestonePolicyTest {
         assertEquals(5_000L, beforeDecrease.nextMilestoneMinor)
         assertEquals(2_500L, afterDecrease.nextMilestoneMinor)
         assertEquals(100L, afterDecrease.remainingMinor)
-        assertEquals(0.96f, afterDecrease.progress, 0.001f)
+        assertEquals(0.933f, afterDecrease.progress, 0.001f)
     }
 
     @Test

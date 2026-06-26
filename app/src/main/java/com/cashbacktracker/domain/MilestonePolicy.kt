@@ -26,9 +26,11 @@ object MilestonePolicy {
     ): MilestoneProgress {
         val positiveMilestones = milestonesMinor
             .filter { it > 0L }
+            .distinct()
             .sorted()
         val safePaidTotal = paidTotalMinor.coerceAtLeast(0L)
         val nextMilestone = positiveMilestones.firstOrNull { it > safePaidTotal }
+        val previousMilestone = positiveMilestones.lastOrNull { it <= safePaidTotal } ?: 0L
 
         if (nextMilestone == null) {
             return MilestoneProgress(
@@ -38,10 +40,12 @@ object MilestonePolicy {
             )
         }
 
+        val milestoneSpan = (nextMilestone - previousMilestone).coerceAtLeast(1L)
+        val progressSinceLastMilestone = safePaidTotal - previousMilestone
         return MilestoneProgress(
             nextMilestoneMinor = nextMilestone,
             remainingMinor = (nextMilestone - safePaidTotal).coerceAtLeast(0L),
-            progress = (safePaidTotal.toFloat() / nextMilestone.toFloat()).coerceIn(0f, 1f),
+            progress = (progressSinceLastMilestone.toFloat() / milestoneSpan.toFloat()).coerceIn(0f, 1f),
         )
     }
 }

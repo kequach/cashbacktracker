@@ -172,6 +172,27 @@ class CashbackPromotionParserTest {
     }
 
     @Test
+    fun derivesCampaignTitleFromUrlWithoutSchemeWhenPageFetchFails() {
+        val parser = CashbackPromotionParser(
+            fetcher = object : PromotionPageFetcher {
+                override suspend fun fetch(url: String): String = error("Not used")
+            },
+        )
+
+        val parsed = parser.parseUrlFallback("tetesept-aktion.de/melatoninspray")
+
+        assertEquals("Tetesept Melatoninspray", parsed.productName)
+    }
+
+    @Test
+    fun normalizesUrlWithoutSchemeToHttps() {
+        assertEquals(
+            "https://www.cheezit-aktion.de/",
+            normalizeCashbackUrl("www.cheezit-aktion.de/"),
+        )
+    }
+
+    @Test
     fun derivesCampaignTitleFromOfficialHostWhenPathIsGeneric() {
         val parser = CashbackPromotionParser(
             fetcher = object : PromotionPageFetcher {

@@ -63,12 +63,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -271,6 +274,19 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
         )
     }
 
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun rememberDismissTextInput(): () -> Unit {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    return remember(focusManager, keyboardController) {
+        {
+            keyboardController?.hide()
+            focusManager.clearFocus(force = true)
+        }
+    }
 }
 
 @Composable
@@ -545,7 +561,6 @@ private fun CashbackForm(
             )
             DateRangeInput(
                 form = form,
-                onFormChange = onFormChange,
                 onOpenPicker = { showRedemptionRangePicker = true },
             )
             OutlinedTextField(
@@ -645,6 +660,7 @@ private fun SuggestingTextField(
     onSuggestionClick: (CashbackEntry) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val dismissTextInput = rememberDismissTextInput()
     Column {
         OutlinedTextField(
             value = value,
@@ -675,6 +691,7 @@ private fun SuggestingTextField(
                         }
                     },
                     onClick = {
+                        dismissTextInput()
                         expanded = false
                         onSuggestionClick(suggestion)
                     },
@@ -687,9 +704,14 @@ private fun SuggestingTextField(
 @Composable
 private fun DateRangeInput(
     form: CashbackFormState,
-    onFormChange: ((CashbackFormState) -> CashbackFormState) -> Unit,
     onOpenPicker: () -> Unit,
 ) {
+    val dismissTextInput = rememberDismissTextInput()
+    val openPicker = {
+        dismissTextInput()
+        onOpenPicker()
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Einlösezeitraum", style = MaterialTheme.typography.labelLarge)
         Row(
@@ -698,23 +720,37 @@ private fun DateRangeInput(
         ) {
             OutlinedTextField(
                 value = form.redemptionStart,
-                onValueChange = { value -> onFormChange { it.copy(redemptionStart = value) } },
-                modifier = Modifier.weight(1f),
+                onValueChange = {},
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            openPicker()
+                        }
+                    },
                 label = { Text("Start") },
+                readOnly = true,
                 singleLine = true,
                 supportingText = { Text("YYYY-MM-DD") },
             )
             OutlinedTextField(
                 value = form.redemptionEnd,
-                onValueChange = { value -> onFormChange { it.copy(redemptionEnd = value) } },
-                modifier = Modifier.weight(1f),
+                onValueChange = {},
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            openPicker()
+                        }
+                    },
                 label = { Text("Ende") },
+                readOnly = true,
                 singleLine = true,
                 supportingText = { Text("YYYY-MM-DD") },
             )
         }
         OutlinedButton(
-            onClick = onOpenPicker,
+            onClick = openPicker,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Einlösezeitraum per Kalender wählen")
@@ -733,12 +769,17 @@ private fun CashbackDateRangeDialog(
         initialSelectedStartDateMillis = DateInput.parse(form.redemptionStart)?.toUtcMillis(),
         initialSelectedEndDateMillis = DateInput.parse(form.redemptionEnd)?.toUtcMillis(),
     )
+    val dismissTextInput = rememberDismissTextInput()
 
     DatePickerDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            dismissTextInput()
+            onDismiss()
+        },
         confirmButton = {
             TextButton(
                 onClick = {
+                    dismissTextInput()
                     onConfirm(
                         state.selectedStartDateMillis?.toLocalDate(),
                         state.selectedEndDateMillis?.toLocalDate(),
@@ -749,7 +790,12 @@ private fun CashbackDateRangeDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = {
+                    dismissTextInput()
+                    onDismiss()
+                },
+            ) {
                 Text("Abbrechen")
             }
         },
@@ -1039,10 +1085,14 @@ private fun SelectionField(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedOption = options.firstOrNull { it.id == selectedId }
+    val dismissTextInput = rememberDismissTextInput()
     Column {
         Text(label, style = MaterialTheme.typography.labelLarge)
         OutlinedButton(
-            onClick = { expanded = true },
+            onClick = {
+                dismissTextInput()
+                expanded = true
+            },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
@@ -1061,6 +1111,7 @@ private fun SelectionField(
             DropdownMenuItem(
                 text = { Text("Nicht ausgewählt") },
                 onClick = {
+                    dismissTextInput()
                     onSelect(null)
                     expanded = false
                 },
@@ -1087,6 +1138,7 @@ private fun SelectionField(
                         }
                     },
                     onClick = {
+                        dismissTextInput()
                         onSelect(option.id)
                         expanded = false
                     },
