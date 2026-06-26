@@ -1,4 +1,16 @@
 # Cashback Tracker
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/img/screenshot_data.png" width="400"><br>
+      <b>Data View</b>
+    </td>
+    <td align="center">
+      <img src="docs/img/screenshot_input.png" width="400"><br>
+      <b>Input View</b>
+    </td>
+  </tr>
+</table>
 
 Cashback Tracker is an Android app for tracking cashback and "try for free"
 promotions locally on your device.
