@@ -1369,6 +1369,7 @@ private fun TransientCelebrationCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        border = BorderStroke(2.dp, PaidStatusContent),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,

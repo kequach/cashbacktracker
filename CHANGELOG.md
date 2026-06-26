@@ -13,7 +13,7 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 - **CSV import** - the `Daten` tab can import the app's CSV backup format and recreate missing bank accounts or devices from the file.
 - **Action-period markers** - the data list highlights entries that are not yet in the `Aktionszeitraum` and planned entries whose `Aktionszeitraum` has already expired.
 - **Milestone progress and celebrations** - the data tab shows animated progress from the last reached milestone toward the next one, with milestone thresholds at 5, 10, 25, 50, 100, 150, 250, 500, 750, and 1000 EUR.
-- **Celebration queue and sounds** - celebration cards stack with spacing instead of overlapping; paid cashbacks and milestones play short original reward sounds through the Android media audio stream.
+- **Celebration queue and sounds** - celebration cards stack with spacing instead of overlapping, share a visible border treatment, and paid cashbacks plus milestones play short original reward sounds through the Android media audio stream.
 - **Cashback URL normalization** - the parser accepts cashback links without an `https://` prefix and normalizes them before parsing or saving.
 - **Selection focus handling** - dropdown suggestions, account/device selections, and date-picker actions clear text input focus so the keyboard does not reopen unexpectedly.
 
