@@ -15,6 +15,7 @@ import com.cashbacktracker.data.repository.DeviceRepository
 import com.cashbacktracker.data.repository.SettingsRepository
 import com.cashbacktracker.data.util.DateInput
 import com.cashbacktracker.data.util.MoneyFormatter
+import com.cashbacktracker.domain.MilestonePolicy
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -76,7 +77,7 @@ class MainViewModel(
             bankAccounts = snapshot.bankAccounts,
             devices = snapshot.devices,
             milestoneSettings = settings,
-            milestonesMinor = MILESTONES_MINOR,
+            milestonesMinor = MilestonePolicy.DEFAULT_MILESTONES_MINOR,
             paidTotalMinor = snapshot.cashbacks
                 .filter { it.status == CashbackStatus.PAID }
                 .sumOf { it.purchasePriceMinor },
@@ -94,18 +95,26 @@ class MainViewModel(
     init {
         viewModelScope.launch {
             combine(cashbackRepository.cashbacks, settingsRepository.milestoneSettings) { cashbacks, settings ->
-                if (!settings.celebrationsEnabled) return@combine null
                 val paidTotal = cashbacks
                     .filter { it.status == CashbackStatus.PAID }
                     .sumOf { it.purchasePriceMinor }
+                val milestoneToShow = if (settings.celebrationsEnabled) {
+                    MilestonePolicy.DEFAULT_MILESTONES_MINOR
+                        .filter { it <= paidTotal }
+                        .firstOrNull { it !in settings.shownMilestonesMinor }
+                } else {
+                    null
+                }
 
-                MILESTONES_MINOR
-                    .filter { it <= paidTotal }
-                    .firstOrNull { it !in settings.shownMilestonesMinor }
-            }.collect { milestone ->
-                if (milestone != null) {
-                    settingsRepository.markMilestoneShown(milestone)
-                    milestoneToShowMinor.value = milestone
+                MilestoneCheck(
+                    paidTotalMinor = paidTotal,
+                    milestoneToShowMinor = milestoneToShow,
+                )
+            }.collect { check ->
+                settingsRepository.keepShownMilestonesAtOrBelow(check.paidTotalMinor)
+                if (check.milestoneToShowMinor != null) {
+                    settingsRepository.markMilestoneShown(check.milestoneToShowMinor)
+                    milestoneToShowMinor.value = check.milestoneToShowMinor
                 }
             }
         }
@@ -395,20 +404,6 @@ class MainViewModel(
         }
     }
 
-    private companion object {
-        val MILESTONES_MINOR = listOf(
-            500L,
-            1_000L,
-            2_500L,
-            5_000L,
-            10_000L,
-            15_000L,
-            25_000L,
-            50_000L,
-            75_000L,
-            100_000L,
-        )
-    }
 }
 
 private fun List<BankAccount>.toBankAccountIdMap(): MutableMap<String, Long> {
@@ -441,3 +436,8 @@ private fun String.normalizedIbanImportKey(): String? =
 
 private fun String.normalizedImportKey(): String =
     trim().lowercase()
+
+private data class MilestoneCheck(
+    val paidTotalMinor: Long,
+    val milestoneToShowMinor: Long?,
+)

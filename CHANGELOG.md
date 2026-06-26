@@ -20,6 +20,7 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 - **CSV account columns** - exports now include separate nickname, IBAN, and account-holder columns for purchase account and payout account.
 - **Expanded milestone thresholds** - milestones now include 5, 10, 25, 50, 100, 150, 250, 500, 750, and 1000 EUR.
 - **More visual milestone celebration** - milestone celebrations now include a larger animated card and a progress animation.
+- **APK size optimization** - release builds now use R8 minification and resource shrinking, unused dependencies were removed, and Material icon usage was replaced with small local vector assets.
 - **Fresh local database baseline** - early-development local storage now uses a fresh `cashback-tracker-v1.db` file to avoid conflicts with older test installs that used the previous version-1 schema.
 
 ### Docs

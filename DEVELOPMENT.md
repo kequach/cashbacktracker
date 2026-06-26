@@ -34,6 +34,10 @@ Build an unsigned release APK locally with:
 .\gradlew.bat assembleRelease --no-configuration-cache
 ```
 
+Release builds run R8 minification and Android resource shrinking. The local
+unsigned release APK produced during verification was about 1.65 MB; exact size
+varies with dependency and toolchain versions.
+
 Without release signing secrets this creates:
 
 ```text

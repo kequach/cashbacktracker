@@ -35,6 +35,22 @@ class SettingsRepository(
         }
     }
 
+    suspend fun keepShownMilestonesAtOrBelow(maxAmountMinor: Long) {
+        dataStore.edit { preferences ->
+            val existing = preferences[SHOWN_MILESTONES].orEmpty()
+            val filtered = existing
+                .mapNotNull { value ->
+                    value.toLongOrNull()
+                        ?.takeIf { it <= maxAmountMinor }
+                        ?.toString()
+                }
+                .toSet()
+            if (filtered != existing) {
+                preferences[SHOWN_MILESTONES] = filtered
+            }
+        }
+    }
+
     private companion object {
         val MILESTONE_CELEBRATIONS_ENABLED = booleanPreferencesKey("milestone_celebrations_enabled")
         val SHOWN_MILESTONES = stringSetPreferencesKey("shown_milestones_minor")

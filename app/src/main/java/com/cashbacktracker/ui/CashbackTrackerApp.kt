@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
@@ -16,18 +17,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -69,16 +65,19 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cashbacktracker.R
 import com.cashbacktracker.data.model.BankAccount
 import com.cashbacktracker.data.model.CashbackDevice
 import com.cashbacktracker.data.model.CashbackEntry
 import com.cashbacktracker.data.model.CashbackStatus
 import com.cashbacktracker.data.util.DateInput
 import com.cashbacktracker.data.util.MoneyFormatter
+import com.cashbacktracker.domain.MilestonePolicy
 import com.cashbacktracker.viewmodel.AppTab
 import com.cashbacktracker.viewmodel.BankAccountFormState
 import com.cashbacktracker.viewmodel.CashbackFormState
@@ -154,19 +153,34 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
                     NavigationBarItem(
                         selected = uiState.selectedTab == AppTab.INPUT,
                         onClick = { viewModel.selectTab(AppTab.INPUT) },
-                        icon = { Icon(Icons.Default.AddCircle, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_input),
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Eingabe") },
                     )
                     NavigationBarItem(
                         selected = uiState.selectedTab == AppTab.DATA,
                         onClick = { viewModel.selectTab(AppTab.DATA) },
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_data),
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Daten") },
                     )
                     NavigationBarItem(
                         selected = uiState.selectedTab == AppTab.MASTER_DATA,
                         onClick = { viewModel.selectTab(AppTab.MASTER_DATA) },
-                        icon = { Icon(Icons.Default.AccountBalance, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_master_data),
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text("Stammdaten") },
                     )
                 }
@@ -378,22 +392,32 @@ private fun MilestoneProgressCard(
     paidTotalMinor: Long,
     milestonesMinor: List<Long>,
 ) {
-    val sortedMilestones = milestonesMinor.sorted()
-    if (sortedMilestones.isEmpty()) return
+    if (milestonesMinor.isEmpty()) return
 
-    val previousMilestone = sortedMilestones.lastOrNull { it <= paidTotalMinor } ?: 0L
-    val nextMilestone = sortedMilestones.firstOrNull { it > paidTotalMinor }
-    val targetProgress = if (nextMilestone == null) {
-        1f
-    } else {
-        ((paidTotalMinor - previousMilestone).toFloat() / (nextMilestone - previousMilestone).toFloat())
-            .coerceIn(0f, 1f)
+    val milestoneProgress = remember(paidTotalMinor, milestonesMinor) {
+        MilestonePolicy.calculateProgress(
+            paidTotalMinor = paidTotalMinor,
+            milestonesMinor = milestonesMinor,
+        )
     }
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(durationMillis = 900),
-        label = "milestone-progress",
-    )
+    val progressAnimation = remember { Animatable(milestoneProgress.progress) }
+    var previousPaidTotalMinor by remember { mutableStateOf(paidTotalMinor) }
+    LaunchedEffect(paidTotalMinor, milestoneProgress.progress) {
+        val totalDecreased = paidTotalMinor < previousPaidTotalMinor
+        previousPaidTotalMinor = paidTotalMinor
+        if (!ValueAnimator.areAnimatorsEnabled()) {
+            progressAnimation.snapTo(milestoneProgress.progress)
+        } else {
+            if (totalDecreased) {
+                progressAnimation.snapTo(0f)
+            }
+            progressAnimation.animateTo(
+                targetValue = milestoneProgress.progress,
+                animationSpec = tween(durationMillis = 900),
+            )
+        }
+    }
+    val nextMilestone = milestoneProgress.nextMilestoneMinor
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -427,12 +451,16 @@ private fun MilestoneProgressCard(
                 )
             }
             LinearProgressIndicator(
-                progress = { animatedProgress },
-                modifier = Modifier.fillMaxWidth(),
+                progress = { progressAnimation.value },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp),
+                color = PaidStatusContent,
+                trackColor = PaidStatusContainer,
             )
             if (nextMilestone != null) {
                 Text(
-                    text = "${MoneyFormatter.formatPlainMinor(nextMilestone - paidTotalMinor)} bis zum nächsten Meilenstein",
+                    text = "${MoneyFormatter.formatPlainMinor(milestoneProgress.remainingMinor)} bis zum nächsten Meilenstein",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -798,7 +826,10 @@ private fun CashbackEntryListItem(
         },
         leadingContent = if (cashback.status == CashbackStatus.PAID) {
             {
-                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                Icon(
+                    painter = painterResource(R.drawable.ic_status_paid),
+                    contentDescription = null,
+                )
             }
         } else {
             null
@@ -1116,7 +1147,7 @@ private fun MilestoneCelebrationCard(
     var targetProgress by remember(eventKey) { mutableStateOf(if (animationsEnabled) 0f else 1f) }
     LaunchedEffect(eventKey) {
         targetProgress = 1f
-        delay(3_200)
+        delay(5_200)
         onFinished()
     }
 
@@ -1156,8 +1187,8 @@ private fun MilestoneCelebrationCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            containerColor = PaidStatusContainer,
+            contentColor = PaidStatusContent,
         ),
     ) {
         Column(
@@ -1169,7 +1200,7 @@ private fun MilestoneCelebrationCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector = Icons.Default.Celebration,
+                    painter = painterResource(R.drawable.ic_celebration),
                     contentDescription = null,
                     modifier = Modifier
                         .scale(scale)
@@ -1189,7 +1220,11 @@ private fun MilestoneCelebrationCard(
             }
             LinearProgressIndicator(
                 progress = { animatedProgress },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp),
+                color = PaidStatusContent,
+                trackColor = Color.White,
             )
         }
     }
@@ -1248,7 +1283,7 @@ private fun TransientCelebrationCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Default.Celebration,
+                painter = painterResource(R.drawable.ic_celebration),
                 contentDescription = null,
                 modifier = Modifier
                     .scale(scale)
