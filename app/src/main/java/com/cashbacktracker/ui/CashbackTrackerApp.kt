@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -52,8 +54,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,6 +75,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacktracker.R
+import com.cashbacktracker.audio.CelebrationSoundPlayer
+import com.cashbacktracker.audio.CelebrationSoundStyle
 import com.cashbacktracker.data.model.BankAccount
 import com.cashbacktracker.data.model.CashbackDevice
 import com.cashbacktracker.data.model.CashbackEntry
@@ -229,9 +235,7 @@ fun CashbackTrackerApp(viewModel: MainViewModel) {
         }
 
         CelebrationOverlay(
-            milestoneMinor = uiState.milestoneToShowMinor,
-            celebrationEvent = uiState.celebrationEvent,
-            onMilestoneFinished = viewModel::dismissMilestone,
+            events = uiState.celebrationEvents,
             onCelebrationFinished = viewModel::dismissCelebration,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -1100,42 +1104,82 @@ private data class SelectionOption(
 
 @Composable
 private fun CelebrationOverlay(
-    milestoneMinor: Long?,
-    celebrationEvent: CelebrationEvent?,
-    onMilestoneFinished: () -> Unit,
-    onCelebrationFinished: () -> Unit,
+    events: List<CelebrationEvent>,
+    onCelebrationFinished: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (milestoneMinor == null && celebrationEvent == null) return
+    CelebrationSoundEffects(events)
+    if (events.isEmpty()) return
 
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier.widthIn(max = 420.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (milestoneMinor != null) {
-            MilestoneCelebrationCard(
-                eventKey = "milestone-$milestoneMinor",
-                amountMinor = milestoneMinor,
-                onFinished = onMilestoneFinished,
-            )
-        }
-        if (celebrationEvent != null) {
-            TransientCelebrationCard(
-                eventKey = "celebration-${celebrationEvent.id}",
-                title = when (celebrationEvent.kind) {
-                    CelebrationKind.CREATED -> "Cashback angelegt"
-                    CelebrationKind.PAID -> "Cashback überwiesen"
-                },
-                body = when (celebrationEvent.kind) {
-                    CelebrationKind.CREATED -> "Die Aktion ist gespeichert."
-                    CelebrationKind.PAID -> "Diese Erstattung ist erledigt."
-                },
-                onFinished = onCelebrationFinished,
-            )
+        events.forEach { event ->
+            key(event.id) {
+                when (event.kind) {
+                    CelebrationKind.MILESTONE -> MilestoneCelebrationCard(
+                        eventKey = "milestone-${event.id}",
+                        amountMinor = event.amountMinor ?: 0L,
+                        onFinished = { onCelebrationFinished(event.id) },
+                    )
+
+                    CelebrationKind.CREATED,
+                    CelebrationKind.PAID -> TransientCelebrationCard(
+                        eventKey = "celebration-${event.id}",
+                        title = when (event.kind) {
+                            CelebrationKind.CREATED -> "Cashback angelegt"
+                            CelebrationKind.PAID -> "Cashback überwiesen"
+                            CelebrationKind.MILESTONE -> error("Milestone events use MilestoneCelebrationCard.")
+                        },
+                        body = when (event.kind) {
+                            CelebrationKind.CREATED -> "Die Aktion ist gespeichert."
+                            CelebrationKind.PAID -> "Diese Erstattung ist erledigt."
+                            CelebrationKind.MILESTONE -> error("Milestone events use MilestoneCelebrationCard.")
+                        },
+                        onFinished = { onCelebrationFinished(event.id) },
+                    )
+                }
+            }
         }
     }
 }
+
+@Composable
+private fun CelebrationSoundEffects(events: List<CelebrationEvent>) {
+    val soundPlayer = remember { CelebrationSoundPlayer() }
+    var playedEventIds by remember { mutableStateOf(emptySet<Long>()) }
+
+    DisposableEffect(soundPlayer) {
+        onDispose { soundPlayer.close() }
+    }
+
+    LaunchedEffect(events) {
+        val newEvents = events.filter { it.id !in playedEventIds }
+        if (newEvents.isEmpty()) return@LaunchedEffect
+
+        playedEventIds = playedEventIds + newEvents.map { it.id }
+        newEvents
+            .mapNotNull { event -> event.soundStyle()?.let { style -> event to style } }
+            .maxByOrNull { (event, _) -> event.kind.soundPriority }
+            ?.let { (_, style) -> soundPlayer.enqueue(style) }
+    }
+}
+
+private fun CelebrationEvent.soundStyle(): CelebrationSoundStyle? =
+    when (kind) {
+        CelebrationKind.PAID -> CelebrationSoundStyle.PAID
+        CelebrationKind.MILESTONE -> CelebrationSoundStyle.MILESTONE
+        CelebrationKind.CREATED -> null
+    }
+
+private val CelebrationKind.soundPriority: Int
+    get() = when (this) {
+        CelebrationKind.MILESTONE -> 2
+        CelebrationKind.PAID -> 1
+        CelebrationKind.CREATED -> 0
+    }
 
 @Composable
 private fun MilestoneCelebrationCard(
@@ -1186,6 +1230,7 @@ private fun MilestoneCelebrationCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        border = BorderStroke(2.dp, PaidStatusContent),
         colors = CardDefaults.cardColors(
             containerColor = PaidStatusContainer,
             contentColor = PaidStatusContent,

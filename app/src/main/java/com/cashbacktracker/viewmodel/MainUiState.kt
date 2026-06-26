@@ -24,8 +24,7 @@ data class MainUiState(
     val paidTotalMinor: Long = 0,
     val message: String? = null,
     val isParsing: Boolean = false,
-    val milestoneToShowMinor: Long? = null,
-    val celebrationEvent: CelebrationEvent? = null,
+    val celebrationEvents: List<CelebrationEvent> = emptyList(),
 )
 
 data class RepositorySnapshot(
@@ -38,16 +37,17 @@ data class UiChromeState(
     val selectedTab: AppTab,
     val message: String?,
     val isParsing: Boolean,
-    val milestoneToShowMinor: Long?,
-    val celebrationEvent: CelebrationEvent?,
+    val celebrationEvents: List<CelebrationEvent>,
 )
 
 enum class CelebrationKind {
     CREATED,
     PAID,
+    MILESTONE,
 }
 
 data class CelebrationEvent(
     val id: Long,
     val kind: CelebrationKind,
+    val amountMinor: Long? = null,
 )

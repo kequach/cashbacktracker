@@ -13,6 +13,7 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 - **CSV import** - the `Daten` tab can import the app's CSV backup format and recreate missing bank accounts or devices from the file.
 - **Action-period markers** - the data list highlights entries that are not yet in the `Aktionszeitraum` and planned entries whose `Aktionszeitraum` has already expired.
 - **Milestone progress** - the data tab now shows animated progress toward the next reimbursement milestone.
+- **Celebration queue and sounds** - celebration cards now stack with spacing instead of overlapping, and paid cashbacks plus milestones play short original reward sounds.
 
 ### Improvements
 

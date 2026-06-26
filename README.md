@@ -19,7 +19,8 @@ already been submitted, and which reimbursements have been paid out.
 - Manage bank accounts and devices locally in `Stammdaten`.
 - Export and import cashback data as CSV.
 - Optional celebration animations for new entries, paid cashbacks, and
-  reimbursement milestones, with progress toward the next milestone.
+  reimbursement milestones, with progress toward the next milestone and short
+  reward sounds for paid cashbacks and milestones.
 
 ## Installation
 

@@ -35,8 +35,8 @@ class MainViewModel(
     private val selectedTab = MutableStateFlow(AppTab.INPUT)
     private val message = MutableStateFlow<String?>(null)
     private val isParsing = MutableStateFlow(false)
-    private val milestoneToShowMinor = MutableStateFlow<Long?>(null)
-    private val celebrationEvent = MutableStateFlow<CelebrationEvent?>(null)
+    private val celebrationEvents = MutableStateFlow<List<CelebrationEvent>>(emptyList())
+    private var celebrationId = 0L
 
     val cashbackForm = MutableStateFlow(CashbackFormState())
     val bankAccountForm = MutableStateFlow(BankAccountFormState())
@@ -54,15 +54,13 @@ class MainViewModel(
         selectedTab,
         message,
         isParsing,
-        milestoneToShowMinor,
-        celebrationEvent,
-    ) { tab, userMessage, parsing, milestone, celebration ->
+        celebrationEvents,
+    ) { tab, userMessage, parsing, celebrations ->
         UiChromeState(
             selectedTab = tab,
             message = userMessage,
             isParsing = parsing,
-            milestoneToShowMinor = milestone,
-            celebrationEvent = celebration,
+            celebrationEvents = celebrations,
         )
     }
 
@@ -83,8 +81,7 @@ class MainViewModel(
                 .sumOf { it.purchasePriceMinor },
             message = chrome.message,
             isParsing = chrome.isParsing,
-            milestoneToShowMinor = chrome.milestoneToShowMinor,
-            celebrationEvent = chrome.celebrationEvent,
+            celebrationEvents = chrome.celebrationEvents,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -108,13 +105,16 @@ class MainViewModel(
 
                 MilestoneCheck(
                     paidTotalMinor = paidTotal,
-                    milestoneToShowMinor = milestoneToShow,
+                    reachedMilestoneMinor = milestoneToShow,
                 )
             }.collect { check ->
                 settingsRepository.keepShownMilestonesAtOrBelow(check.paidTotalMinor)
-                if (check.milestoneToShowMinor != null) {
-                    settingsRepository.markMilestoneShown(check.milestoneToShowMinor)
-                    milestoneToShowMinor.value = check.milestoneToShowMinor
+                if (check.reachedMilestoneMinor != null) {
+                    settingsRepository.markMilestoneShown(check.reachedMilestoneMinor)
+                    addCelebration(
+                        kind = CelebrationKind.MILESTONE,
+                        amountMinor = check.reachedMilestoneMinor,
+                    )
                 }
             }
         }
@@ -217,10 +217,7 @@ class MainViewModel(
                 status = status,
             )
             cashbackForm.value = CashbackFormState()
-            celebrationEvent.value = CelebrationEvent(
-                id = System.currentTimeMillis(),
-                kind = CelebrationKind.CREATED,
-            )
+            addCelebration(kind = CelebrationKind.CREATED)
         }
     }
 
@@ -256,10 +253,7 @@ class MainViewModel(
         viewModelScope.launch {
             cashbackRepository.setStatus(id = id, status = newStatus)
             if (newStatus == CashbackStatus.PAID) {
-                celebrationEvent.value = CelebrationEvent(
-                    id = System.currentTimeMillis(),
-                    kind = CelebrationKind.PAID,
-                )
+                addCelebration(kind = CelebrationKind.PAID)
             } else {
                 message.value = "Status wurde aktualisiert."
             }
@@ -290,12 +284,8 @@ class MainViewModel(
         }
     }
 
-    fun dismissMilestone() {
-        milestoneToShowMinor.value = null
-    }
-
-    fun dismissCelebration() {
-        celebrationEvent.value = null
+    fun dismissCelebration(id: Long) {
+        celebrationEvents.update { events -> events.filterNot { it.id == id } }
     }
 
     suspend fun createExportCsv(): String {
@@ -325,6 +315,21 @@ class MainViewModel(
 
     fun clearMessage() {
         message.value = null
+    }
+
+    private fun addCelebration(kind: CelebrationKind, amountMinor: Long? = null) {
+        celebrationEvents.update { events ->
+            events + CelebrationEvent(
+                id = nextCelebrationId(),
+                kind = kind,
+                amountMinor = amountMinor,
+            )
+        }
+    }
+
+    private fun nextCelebrationId(): Long {
+        celebrationId += 1
+        return (System.currentTimeMillis() * 1_000L) + celebrationId
     }
 
     private suspend fun importCashbacks(csv: String): Int {
@@ -439,5 +444,5 @@ private fun String.normalizedImportKey(): String =
 
 private data class MilestoneCheck(
     val paidTotalMinor: Long,
-    val milestoneToShowMinor: Long?,
+    val reachedMilestoneMinor: Long?,
 )
