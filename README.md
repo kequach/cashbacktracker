@@ -1,4 +1,5 @@
 # Cashback Tracker
+![feature_graphic.png](docs/play-store/feature_graphic.png)
 <table>
   <tr>
     <td align="center">
