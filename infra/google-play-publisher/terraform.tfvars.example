@@ -1,0 +1,10 @@
+project_id                    = "cashback-tracker-playstore"
+service_account_id            = "cbtracker-play-sa"
+service_account_display_name  = "Cashback Tracker Play Publisher"
+workload_identity_pool_id     = "github-actions"
+workload_identity_provider_id = "cashbacktracker-release"
+github_repository             = "kequach/cashbacktracker"
+# Optional hardening: set this to the numeric GitHub repository ID.
+# github_repository_id        = "123456789"
+github_environment            = "google-play"
+github_workflow               = "Android Release"
