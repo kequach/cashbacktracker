@@ -36,7 +36,9 @@ already been submitted, and which reimbursements have been paid out.
 
 ## Installation
 
-Download the APK from the latest GitHub Release:
+When the Play Console listing is live, install Cashback Tracker from Google
+Play. Until then, or for direct APK distribution, download the APK from the
+latest GitHub Release:
 
 [GitHub Releases](https://github.com/kequach/cashbacktracker/releases)
 
@@ -79,6 +81,7 @@ If you tap by mistake, keep tapping the promotion. The status cycles through
   cashback data, IBANs, and notes.
 - CSV import reads the same unencrypted backup format and can restore cashback
   entries, bank accounts, and devices from that file.
+- Privacy policy: [PRIVACY.md](PRIVACY.md)
 
 ## CSV Backup And Restore
 
@@ -104,5 +107,6 @@ details and notes.
 ## More Information
 
 - Version history: [CHANGELOG.md](CHANGELOG.md)
+- Privacy policy: [PRIVACY.md](PRIVACY.md)
 - Technical development, build, release, and CI details:
   [DEVELOPMENT.md](DEVELOPMENT.md)

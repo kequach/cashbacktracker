@@ -20,15 +20,22 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 ### Build and data maintenance
 
 - **APK size optimization** - release builds now use R8 minification and resource shrinking, unused dependencies were removed, and Material icon usage was replaced with small local vector assets.
+- **Google Play release automation** - publishing a GitHub Release now verifies unsigned release artifacts, signs and attaches the APK/AAB from a protected environment, and publishes the AAB to the configured Google Play track using GitHub OIDC, Workload Identity Federation, and Play Console app-level permissions.
 - **Fresh local database baseline** - early-development local storage now uses a fresh `cashback-tracker-v1.db` file to avoid conflicts with older test installs that used the previous version-1 schema.
 
 ### Docs
 
 - **English end-user README** - README now focuses on installation, first steps, privacy, CSV export, and everyday app usage.
+- **Privacy policy** - a simple public privacy policy now documents the app's local-only storage, user-triggered URL analysis, CSV export behavior, and lack of analytics, ads, tracking, or cloud sync for Google Play publication.
 - **Development guide** - build, CI, signing, release, and versioning details moved to `DEVELOPMENT.md`.
 - **Changelog and guardrails** - documentation now describes purchase account and payout account separately.
 - **Prompt-level changelog guardrail** - `AGENTS.md` now requires a changelog impact check for every prompt and a `CHANGELOG.md` update for substantive changes.
 - **Changelog grouping guardrail** - `AGENTS.md` now requires current-release changelog entries to describe final behavior instead of artificial same-release improvements.
+- **Codex workflow guide** - `docs/CODEX_WORKFLOW.md` now documents the plan/spec/implement/verify/review loop for agent-assisted work.
+- **Project Codex agents and skill** - project-scoped review subagents and `$cashback-change-workflow` now codify fresh-context review, security review, and verification expectations.
+- **Codex agent topology guidance** - workflow docs, skill instructions, and review agents now use a router-first, specialist-on-demand model with explicit agent-card contracts.
+- **Codex test-quality guardrail** - workflow docs and review agents now flag over-mocked generated tests that do not prove real app behavior.
+- **Codex token-aware templates** - feature request prompts now distinguish tiny AGENTS-only changes from material skill/reviewer workflows.
 - **German umlauts** - German UI terms now use umlauts consistently in the app and docs.
 
 ---

@@ -6,17 +6,23 @@ on:
       - published
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release-apk:
-    name: Build signed release APK
+  build-release:
+    name: Verify and build unsigned release
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      version_code: ${{ steps.version.outputs.version_code }}
+      version_name: ${{ steps.version.outputs.version_name }}
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -61,6 +67,55 @@ jobs:
           echo "version_code=${version_code}" >> "${GITHUB_OUTPUT}"
           echo "release_tag=${RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
 
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --no-configuration-cache --stacktrace
+
+      - name: Run lint
+        run: ./gradlew lintDebug --no-configuration-cache --stacktrace
+
+      - name: Build unsigned release artifacts
+        run: ./gradlew assembleRelease bundleRelease --no-configuration-cache --stacktrace
+
+      - name: Prepare unsigned release artifacts
+        run: |
+          mkdir -p unsigned-release-artifacts
+          cp app/build/outputs/apk/release/app-release-unsigned.apk unsigned-release-artifacts/app-release-unsigned.apk
+          cp app/build/outputs/bundle/release/app-release.aab unsigned-release-artifacts/app-release-unsigned.aab
+          cp app/build/outputs/mapping/release/mapping.txt unsigned-release-artifacts/mapping.txt
+          sha256sum unsigned-release-artifacts/* > unsigned-release-artifacts/SHA256SUMS
+
+      - name: Upload unsigned release artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: cashback-tracker-unsigned-release-artifacts
+          path: unsigned-release-artifacts/*
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  sign-release:
+    name: Sign and attach release artifacts
+    runs-on: ubuntu-latest
+    needs: build-release
+    timeout-minutes: 20
+    environment:
+      name: google-play
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download unsigned release artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: cashback-tracker-unsigned-release-artifacts
+          path: unsigned-release-artifacts
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Validate signing secrets
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -69,57 +124,203 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [[ -z "${ANDROID_KEYSTORE_BASE64}" ]]; then
-            echo "::error::Missing repository secret ANDROID_KEYSTORE_BASE64."
+            echo "::error::Missing google-play environment secret ANDROID_KEYSTORE_BASE64."
             exit 1
           fi
           if [[ -z "${ANDROID_KEYSTORE_PASSWORD}" ]]; then
-            echo "::error::Missing repository secret ANDROID_KEYSTORE_PASSWORD."
+            echo "::error::Missing google-play environment secret ANDROID_KEYSTORE_PASSWORD."
             exit 1
           fi
           if [[ -z "${ANDROID_KEY_ALIAS}" ]]; then
-            echo "::error::Missing repository secret ANDROID_KEY_ALIAS."
+            echo "::error::Missing google-play environment secret ANDROID_KEY_ALIAS."
             exit 1
           fi
           if [[ -z "${ANDROID_KEY_PASSWORD}" ]]; then
-            echo "::error::Missing repository secret ANDROID_KEY_PASSWORD."
+            echo "::error::Missing google-play environment secret ANDROID_KEY_PASSWORD."
             exit 1
           fi
 
-      - name: Decode signing keystore
+      - name: Sign release artifacts
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: |
-          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/release-keystore.jks"
-
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --no-configuration-cache --stacktrace
-
-      - name: Run lint
-        run: ./gradlew lintDebug --no-configuration-cache --stacktrace
-
-      - name: Build signed release APK
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release-keystore.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-configuration-cache --stacktrace
-
-      - name: Prepare release asset
         run: |
-          mkdir -p release-artifacts
-          cp app/build/outputs/apk/release/app-release.apk "release-artifacts/cashback-tracker-v${{ steps.version.outputs.version_name }}-${{ steps.version.outputs.version_code }}.apk"
+          set -euo pipefail
 
-      - name: Upload APK to GitHub Release
+          keystore="${RUNNER_TEMP}/release-keystore.jks"
+          aligned_apk="${RUNNER_TEMP}/app-release-aligned.apk"
+          android_home="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          build_tools_dir="$(find "${android_home}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+
+          if [[ -z "${build_tools_dir}" ]]; then
+            echo "::error::Could not find Android SDK build-tools for zipalign/apksigner."
+            exit 1
+          fi
+
+          cleanup() {
+            rm -f "${keystore}" "${aligned_apk}"
+          }
+          trap cleanup EXIT
+
+          mkdir -p release-artifacts
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${keystore}"
+
+          "${build_tools_dir}/zipalign" -p -f 4 \
+            unsigned-release-artifacts/app-release-unsigned.apk \
+            "${aligned_apk}"
+          "${build_tools_dir}/apksigner" sign \
+            --ks "${keystore}" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --ks-key-alias "${ANDROID_KEY_ALIAS}" \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            --out "release-artifacts/cashback-tracker-v${{ needs.build-release.outputs.version_name }}-${{ needs.build-release.outputs.version_code }}.apk" \
+            "${aligned_apk}"
+          "${build_tools_dir}/apksigner" verify --verbose \
+            "release-artifacts/cashback-tracker-v${{ needs.build-release.outputs.version_name }}-${{ needs.build-release.outputs.version_code }}.apk"
+
+          jarsigner \
+            -keystore "${keystore}" \
+            -storepass "${ANDROID_KEYSTORE_PASSWORD}" \
+            -keypass "${ANDROID_KEY_PASSWORD}" \
+            -sigalg SHA256withRSA \
+            -digestalg SHA-256 \
+            -signedjar "release-artifacts/cashback-tracker-v${{ needs.build-release.outputs.version_name }}-${{ needs.build-release.outputs.version_code }}.aab" \
+            unsigned-release-artifacts/app-release-unsigned.aab \
+            "${ANDROID_KEY_ALIAS}"
+          jarsigner -verify -certs \
+            "release-artifacts/cashback-tracker-v${{ needs.build-release.outputs.version_name }}-${{ needs.build-release.outputs.version_code }}.aab"
+
+          cp unsigned-release-artifacts/mapping.txt release-artifacts/mapping.txt
+          sha256sum release-artifacts/*.apk release-artifacts/*.aab > release-artifacts/SHA256SUMS
+
+      - name: Upload artifacts to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ steps.version.outputs.release_tag }}" release-artifacts/*.apk --clobber
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "${{ needs.build-release.outputs.release_tag }}" release-artifacts/*.apk release-artifacts/*.aab --clobber
 
-      - name: Upload APK as workflow artifact
+      - name: Upload signed release artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: cashback-tracker-release-apk
-          path: release-artifacts/*.apk
+          name: cashback-tracker-signed-release-artifacts
+          path: |
+            release-artifacts/*.apk
+            release-artifacts/*.aab
+            release-artifacts/mapping.txt
+            release-artifacts/SHA256SUMS
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
+
+  publish-play:
+    name: Publish AAB to Google Play
+    runs-on: ubuntu-latest
+    needs:
+      - build-release
+      - sign-release
+    timeout-minutes: 20
+    environment:
+      name: google-play
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PLAY_PACKAGE_NAME: ${{ vars.PLAY_PACKAGE_NAME || 'com.cashbacktracker' }}
+      PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}
+      PLAY_TRACK: ${{ vars.PLAY_TRACK || 'internal' }}
+      PLAY_USER_FRACTION: ${{ vars.PLAY_USER_FRACTION || '' }}
+      GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL: ${{ vars.GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL }}
+      GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build-release.outputs.release_tag }}
+          persist-credentials: false
+
+      - name: Download signed release artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: cashback-tracker-signed-release-artifacts
+          path: release-artifacts
+
+      - name: Validate Play publishing configuration
+        run: |
+          if [[ -z "${GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER}" ]]; then
+            echo "::error::Missing google-play environment variable GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER."
+            exit 1
+          fi
+          if [[ -z "${GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL}" ]]; then
+            echo "::error::Missing google-play environment variable GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL."
+            exit 1
+          fi
+          if [[ -z "${PLAY_PACKAGE_NAME}" ]]; then
+            echo "::error::PLAY_PACKAGE_NAME must not be empty."
+            exit 1
+          fi
+          if [[ -z "${PLAY_TRACK}" ]]; then
+            echo "::error::PLAY_TRACK must not be empty."
+            exit 1
+          fi
+          case "${PLAY_RELEASE_STATUS}" in
+            completed|draft|inProgress)
+              ;;
+            *)
+              echo "::error::PLAY_RELEASE_STATUS must be one of completed, draft, or inProgress."
+              exit 1
+              ;;
+          esac
+          if [[ "${PLAY_RELEASE_STATUS}" == "inProgress" && -z "${PLAY_USER_FRACTION}" ]]; then
+            echo "::error::PLAY_USER_FRACTION is required when PLAY_RELEASE_STATUS is inProgress."
+            exit 1
+          fi
+
+      - name: Prepare Play release notes
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_TAG: ${{ needs.build-release.outputs.release_tag }}
+        run: |
+          mkdir -p release-artifacts/play-notes
+          notes="$(printf '%s\n' "${RELEASE_BODY}" | sed -e 's/\r$//' -e '/^[[:space:]]*$/d' | head -c 500)"
+          if [[ -z "${notes}" ]]; then
+            notes="Cashback Tracker ${RELEASE_TAG}"
+          fi
+          printf '%s\n' "${notes}" > release-artifacts/play-notes/whatsnew-de-DE
+          printf '%s\n' "${notes}" > release-artifacts/play-notes/whatsnew-en-US
+
+      - name: Authenticate to Google Cloud
+        id: google-auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Upload AAB to Google Play
+        if: env.PLAY_RELEASE_STATUS != 'inProgress'
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJson: ${{ steps.google-auth.outputs.credentials_file_path }}
+          packageName: ${{ env.PLAY_PACKAGE_NAME }}
+          releaseFiles: release-artifacts/cashback-tracker-v${{ needs.build-release.outputs.version_name }}-${{ needs.build-release.outputs.version_code }}.aab
+          tracks: ${{ env.PLAY_TRACK }}
+          status: ${{ env.PLAY_RELEASE_STATUS }}
+          releaseName: ${{ needs.build-release.outputs.release_tag }}
+          whatsNewDirectory: release-artifacts/play-notes
+          mappingFile: release-artifacts/mapping.txt
+
+      - name: Upload staged AAB to Google Play
+        if: env.PLAY_RELEASE_STATUS == 'inProgress'
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJson: ${{ steps.google-auth.outputs.credentials_file_path }}
+          packageName: ${{ env.PLAY_PACKAGE_NAME }}
+          releaseFiles: release-artifacts/cashback-tracker-v${{ needs.build-release.outputs.version_name }}-${{ needs.build-release.outputs.version_code }}.aab
+          tracks: ${{ env.PLAY_TRACK }}
+          status: ${{ env.PLAY_RELEASE_STATUS }}
+          userFraction: ${{ env.PLAY_USER_FRACTION }}
+          releaseName: ${{ needs.build-release.outputs.release_tag }}
+          whatsNewDirectory: release-artifacts/play-notes
+          mappingFile: release-artifacts/mapping.txt

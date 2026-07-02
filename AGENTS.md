@@ -169,6 +169,10 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
   - Cashback totals, milestone triggering, and paid-status filtering.
   - ViewModel state transitions.
   - Encryption/key handling boundaries where practical.
+- Prefer behavior-oriented tests that exercise real parser, repository,
+  ViewModel, Room, import/export, and encryption behavior where practical. Mock
+  platform, clock, filesystem, or network boundaries, but do not mock away the
+  logic the test is meant to prove.
 - For UI work, use Compose previews for fast inspection and UI tests for flows
   that create/edit cashback entries, bank accounts, and devices.
 - If an emulator/device or Android SDK is unavailable, run all local JVM checks
@@ -192,3 +196,37 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
   architecture note before implementing it.
 - Do not add sample credentials, real IBANs, or real cashback links as fixtures.
   Use clearly fake data.
+
+## Codex Operating Workflow
+
+- For material feature, bug, refactor, data, security, parser, workflow, or
+  release changes, follow `docs/CODEX_WORKFLOW.md`.
+- Start hard or ambiguous work in plan mode, or explicitly ask for an
+  exploration-and-plan pass before edits. Skip ceremony for one-line fixes.
+- Use a lightweight spec-first loop for material changes: goal, non-goals,
+  affected files, acceptance checks, task list, implementation, verification,
+  fresh-context review, and changelog/docs decision.
+- Keep one Codex thread per task. Clear or start fresh after repeated failed
+  corrections or when switching to unrelated work.
+- Prefer local/worktree isolation for parallel tasks so generated edits do not
+  collide with the main checkout.
+- Use the repo-local router-first topology from `docs/CODEX_WORKFLOW.md`: the
+  main Codex agent routes normal work and escalates to specialist review only
+  when risk or task complexity warrants it.
+- Use project-scoped subagents when their focused context helps:
+  - `cashback-code-reviewer`: fresh-context review of diffs for correctness,
+    Android/Kotlin architecture, regressions, scope drift, and missing tests.
+  - `cashback-security-reviewer`: privacy/security review for sensitive data,
+    crypto, Android permissions, URL parsing/network use, CSV import/export,
+    logging, and local-only storage.
+- Invoke `$cashback-change-workflow` for repeatable feature, bug, refactor,
+  parser, data, security, workflow, or release tasks.
+- Verification order: run the narrowest relevant JVM tests first, then broaden
+  to `testDebugUnitTest`, `assembleDebug`, `lintDebug`, and instrumented tests
+  when the touched surface justifies it and the environment supports it.
+- Always include command evidence or explain why a check could not be run.
+- Do not use subagents as a replacement for tests or human review; use them to
+  find gaps before the final response or PR.
+- Do not add new agents, MCP servers, A2A-style protocols, or external
+  orchestration for this repo unless there is a repeated need that cannot be
+  handled by the existing skill, reviewer agents, and verification loop.
