@@ -21,12 +21,14 @@ All notable changes to the [Cashback Tracker](https://github.com/kequach/cashbac
 
 - **APK size optimization** - release builds now use R8 minification and resource shrinking, unused dependencies were removed, and Material icon usage was replaced with small local vector assets.
 - **Google Play release automation** - publishing a GitHub Release now verifies unsigned release artifacts, signs and attaches the APK/AAB from a protected environment, and publishes the AAB to the configured Google Play track using GitHub OIDC, Workload Identity Federation, and Play Console app-level permissions.
+- **Google Play Terraform helper** - `infra/google-play-publisher/` now codifies the Google Cloud APIs, existing Play publishing service account, GitHub OIDC provider, and least-privilege impersonation binding needed by the Play release workflow.
 - **Fresh local database baseline** - early-development local storage now uses a fresh `cashback-tracker-v1.db` file to avoid conflicts with older test installs that used the previous version-1 schema.
 
 ### Docs
 
 - **English end-user README** - README now focuses on installation, first steps, privacy, CSV export, and everyday app usage.
 - **Privacy policy** - a simple public privacy policy now documents the app's local-only storage, user-triggered URL analysis, CSV export behavior, and lack of analytics, ads, tracking, or cloud sync for Google Play publication.
+- **Play Store listing assets** - Play Store assets now include a 1024 x 500 feature graphic, a 512 x 512 app icon, and emulator-captured phone, 7-inch tablet, and 10-inch tablet screenshot sets with milestone celebration captures.
 - **Development guide** - build, CI, signing, release, and versioning details moved to `DEVELOPMENT.md`.
 - **Changelog and guardrails** - documentation now describes purchase account and payout account separately.
 - **Prompt-level changelog guardrail** - `AGENTS.md` now requires a changelog impact check for every prompt and a `CHANGELOG.md` update for substantive changes.

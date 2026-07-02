@@ -183,19 +183,33 @@ Manual Google Play Console steps:
 
 Manual Google Cloud steps:
 
-1. Create or select a Google Cloud project.
-2. Enable the Google Play Developer API.
-3. Create a dedicated service account for Play publishing. Do not grant broad
-   project roles unless another Google Cloud resource actually needs them.
-4. Configure Workload Identity Federation for GitHub Actions and restrict it to
-   this repository and the `google-play` GitHub environment. Include the
-   release workflow/ref in the condition when practical. This avoids storing a
-   long-lived service account JSON key in GitHub and prevents unrelated
-   workflows from impersonating the Play publisher.
-5. Grant the GitHub workload identity permission to impersonate the Play
-   publishing service account.
-6. In Play Console, invite the service account under Users and permissions and
+1. Create or select the Google Cloud project
+   `cashback-tracker-playstore`.
+2. Use the Terraform helper in
+   `infra/google-play-publisher/` to enable required APIs, manage the
+   `cbtracker-play-sa` service account, configure Workload Identity Federation,
+   and grant GitHub Actions impersonation:
+
+   ```powershell
+   cd infra\google-play-publisher
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+3. Copy the Terraform `github_environment_variables` output into the GitHub
+   `google-play` environment.
+4. In Play Console, invite the service account under Users and permissions and
    grant only the app-level release permissions needed for the selected track.
+
+The Terraform helper uses the existing service account:
+
+```text
+cbtracker-play-sa@cashback-tracker-playstore.iam.gserviceaccount.com
+```
+
+It does not create service account JSON keys, manage Android signing secrets,
+or configure Play Console app permissions.
 
 Manual GitHub setup:
 
