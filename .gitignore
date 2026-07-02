@@ -7,3 +7,11 @@ local.properties
 app/build/
 *.jks
 gha-creds-*.json
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
