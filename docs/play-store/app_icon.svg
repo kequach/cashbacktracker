@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Cashback Tracker app icon</title>
+  <desc id="desc">Cashback Tracker launcher icon with a cashback arrow and currency mark on a teal background.</desc>
+  <rect width="512" height="512" fill="#073D49"/>
+  <g transform="translate(0 0) scale(4.7407407407)">
+    <path fill="#F9C846" d="M24,54L42,34H86C90.4,34 94,37.6 94,42V66C94,70.4 90.4,74 86,74H42Z"/>
+    <path fill="#FFF4BF" d="M33,54L45,41H85C87.2,41 89,42.8 89,45V63C89,65.2 87.2,67 85,67H45Z"/>
+    <path fill="none" stroke="#073D49" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M65,42C61.8,38.7 53.8,37.8 49.1,41.7C44.4,45.6 46.4,51.8 55.7,53.2C67,54.8 70.4,62 64.4,67.5C58.6,72.8 48.5,71.3 43.8,66.3"/>
+    <path fill="none" stroke="#073D49" stroke-width="6" stroke-linecap="round" d="M55,32V76"/>
+  </g>
+</svg>

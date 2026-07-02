@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" role="img" aria-labelledby="title desc">
+  <title id="title">Cashback Tracker Play Store feature graphic</title>
+  <desc id="desc">A German Cashback Tracker feature graphic showing local cashback planning, submission, reimbursement progress, and CSV backup.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#073D49"/>
+      <stop offset="0.55" stop-color="#0D5B62"/>
+      <stop offset="1" stop-color="#14715F"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF9E3"/>
+      <stop offset="1" stop-color="#E8F7EE"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#04272D" flood-opacity="0.36"/>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#04272D" flood-opacity="0.22"/>
+    </filter>
+    <clipPath id="screenClip">
+      <rect x="590" y="48" width="356" height="404" rx="34"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#background)"/>
+  <path d="M716 -50C825 -26 896 36 976 112C1058 190 1076 297 1037 403C999 506 890 557 785 537C682 518 610 437 587 335C563 232 607 128 716 -50Z" fill="#F9C846" opacity="0.96"/>
+  <path d="M-48 424C64 358 169 359 270 406C344 441 420 469 502 449C584 430 645 363 724 368C816 374 882 462 982 463C1048 464 1092 426 1126 392V560H-48Z" fill="#D8F2E3" opacity="0.24"/>
+  <path d="M58 32C165 -26 309 -8 389 68C474 149 453 288 349 339C247 390 102 367 36 282C-29 199 -47 89 58 32Z" fill="#FFF4BF" opacity="0.10"/>
+
+  <g transform="translate(72 72)">
+    <text x="0" y="0" font-family="Segoe UI, Arial, sans-serif" font-size="54" font-weight="800" fill="#FFF4BF">Cashback Tracker</text>
+    <text x="2" y="52" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="600" fill="#F5FFFA">Aktionen planen. Einreichen.</text>
+    <text x="2" y="90" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="600" fill="#F5FFFA">Erstattung sehen.</text>
+
+    <g transform="translate(0 142)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="146" height="48" rx="24" fill="#FFF4BF"/>
+      <path d="M30 15L20 25L30 35" fill="none" stroke="#073D49" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M22 25H47" fill="none" stroke="#073D49" stroke-width="4" stroke-linecap="round"/>
+      <text x="62" y="31" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#073D49">Lokal</text>
+    </g>
+    <g transform="translate(166 142)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="180" height="48" rx="24" fill="#D8F2E3"/>
+      <path d="M26 23C26 15 32 10 40 10C48 10 54 15 54 23V36H26Z" fill="none" stroke="#073D49" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M34 23V18C34 15 37 13 40 13C43 13 46 15 46 18V23" fill="none" stroke="#073D49" stroke-width="4" stroke-linecap="round"/>
+      <text x="68" y="31" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#073D49">Privat</text>
+    </g>
+    <g transform="translate(0 210)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="240" height="64" rx="30" fill="#F7E9FF"/>
+      <circle cx="38" cy="32" r="18" fill="#6F53B5"/>
+      <path d="M30 32L36 38L47 25" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="68" y="27" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="800" fill="#1D1238">30,00 EUR</text>
+      <text x="68" y="49" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#4A3C5C">erstattet</text>
+    </g>
+
+    <g transform="translate(292 208) rotate(-7)" filter="url(#softShadow)">
+      <path d="M0 44L42 0H138C153 0 166 13 166 28V88C166 103 153 116 138 116H42Z" fill="#F9C846"/>
+      <path d="M26 45L54 17H134C143 17 150 24 150 33V83C150 92 143 99 134 99H54Z" fill="#FFF4BF"/>
+      <path d="M102 22C93 14 73 13 62 23C51 33 56 48 78 51C104 55 112 72 98 85C84 98 60 94 49 82" fill="none" stroke="#073D49" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M77 8V109" fill="none" stroke="#073D49" stroke-width="10" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="590" y="48" width="356" height="404" rx="34" fill="url(#panel)"/>
+    <g clip-path="url(#screenClip)">
+      <rect x="590" y="48" width="356" height="74" fill="#FFF7E9"/>
+      <text x="626" y="96" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="800" fill="#202124">Alle Cashbacks</text>
+      <rect x="827" y="70" width="82" height="34" rx="17" fill="#F9C846"/>
+      <text x="850" y="93" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="800" fill="#073D49">CSV</text>
+
+      <rect x="626" y="148" width="284" height="84" rx="20" fill="#FFFFFF" opacity="0.78"/>
+      <text x="650" y="179" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="800" fill="#14333A">Meilenstein-Fortschritt</text>
+      <text x="650" y="207" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600" fill="#4E6065">30,00 EUR von 50,00 EUR</text>
+      <rect x="650" y="216" width="236" height="10" rx="5" fill="#D6F0DF"/>
+      <rect x="650" y="216" width="142" height="10" rx="5" fill="#126636"/>
+
+      <g transform="translate(626 262)">
+        <rect x="0" y="0" width="284" height="54" rx="16" fill="#FFF4BF"/>
+        <circle cx="28" cy="27" r="14" fill="#F9C846"/>
+        <path d="M22 27H35" stroke="#073D49" stroke-width="4" stroke-linecap="round"/>
+        <text x="58" y="23" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="800" fill="#123136">Geplant</text>
+        <text x="58" y="43" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#51676B">Produktaktion vormerken</text>
+      </g>
+
+      <g transform="translate(626 330)">
+        <rect x="0" y="0" width="284" height="54" rx="16" fill="#E5D7FF"/>
+        <circle cx="28" cy="27" r="14" fill="#6F53B5"/>
+        <path d="M21 28L28 35L37 20" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="58" y="23" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="800" fill="#1D1238">Eingereicht</text>
+        <text x="58" y="43" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#574670">Erstattung im Blick</text>
+      </g>
+
+      <g transform="translate(626 398)">
+        <rect x="0" y="0" width="284" height="54" rx="16" fill="#D8F2E3"/>
+        <circle cx="28" cy="27" r="14" fill="#126636"/>
+        <path d="M21 28L27 34L38 21" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="58" y="23" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="800" fill="#0D4F2C">Überwiesen</text>
+        <text x="58" y="43" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#2D6946">Cashback erledigt</text>
+      </g>
+    </g>
+  </g>
+</svg>
