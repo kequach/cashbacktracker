@@ -192,6 +192,9 @@ work stays consistent, secure, and aligned with the cashback tracker app goal.
   "improvements" of features that were introduced in that same version. Use
   changed/fixed-style entries only when the change is meaningful relative to a
   previous released version or a user-visible regression in the current build.
+- Name the user-facing changelog section `Features` so it can be copied into a
+  GitHub Release `Features` section. The Play release workflow extracts that
+  section for Google Play notes and caps it to Play's release-notes limit.
 - Document any security-sensitive choice in the README or a dedicated
   architecture note before implementing it.
 - Do not add sample credentials, real IBANs, or real cashback links as fixtures.

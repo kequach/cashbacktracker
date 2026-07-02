@@ -284,12 +284,59 @@ jobs:
           RELEASE_TAG: ${{ needs.build-release.outputs.release_tag }}
         run: |
           mkdir -p release-artifacts/play-notes
-          notes="$(printf '%s\n' "${RELEASE_BODY}" | sed -e 's/\r$//' -e '/^[[:space:]]*$/d' | head -c 500)"
-          if [[ -z "${notes}" ]]; then
-            notes="Cashback Tracker ${RELEASE_TAG}"
-          fi
-          printf '%s\n' "${notes}" > release-artifacts/play-notes/whatsnew-de-DE
-          printf '%s\n' "${notes}" > release-artifacts/play-notes/whatsnew-en-US
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          PLAY_RELEASE_NOTES_LIMIT = 500
+          FEATURES_HEADING = "features"
+
+          def normalize_heading(text):
+              text = re.sub(r"^#+\s*", "", text).strip()
+              text = re.sub(r"[*_`]+", "", text)
+              text = re.sub(r"[^a-z0-9]+", " ", text.lower())
+              return text.strip()
+
+          def extract_markdown_section(markdown, heading):
+              lines = markdown.splitlines()
+              selected = []
+              start_level = None
+              in_section = False
+
+              for line in lines:
+                  match = re.match(r"^(#{1,6})\s+(.+?)\s*#*\s*$", line)
+                  if match:
+                      level = len(match.group(1))
+                      title = normalize_heading(match.group(2))
+                      if in_section and level <= start_level:
+                          break
+                      if title == heading:
+                          in_section = True
+                          start_level = level
+                          continue
+                  if in_section:
+                      selected.append(line)
+
+              return "\n".join(selected).strip()
+
+          body = os.environ.get("RELEASE_BODY", "")
+          release_tag = os.environ["RELEASE_TAG"]
+          body = body.replace("\r\n", "\n").replace("\r", "\n")
+          body = extract_markdown_section(body, FEATURES_HEADING) or body
+
+          lines = body.splitlines()
+          notes = "\n".join(line for line in lines if line.strip()).strip()
+          if not notes:
+              notes = f"Cashback Tracker {release_tag}"
+          notes = notes[:PLAY_RELEASE_NOTES_LIMIT]
+
+          notes_dir = Path("release-artifacts/play-notes")
+          for locale in ("de-DE", "en-US"):
+              (notes_dir / f"whatsnew-{locale}").write_text(notes, encoding="utf-8")
+
+          print(f"Wrote Play release notes with {len(notes)} characters.")
+          PY
 
       - name: Authenticate to Google Cloud
         id: google-auth

@@ -56,15 +56,15 @@ app\build\outputs\bundle\release\app-release.aab
 App version values live in `gradle.properties`:
 
 ```properties
-VERSION_NAME=0.2.0
-VERSION_CODE=2
+VERSION_NAME=1.0.0
+VERSION_CODE=1
 ```
 
 Rules:
 
 - Use semantic versioning for `VERSION_NAME`.
 - Increment `VERSION_CODE` for every public release.
-- The GitHub Release tag must match `v<VERSION_NAME>`, for example `v0.2.0`.
+- The GitHub Release tag must match `v<VERSION_NAME>`, for example `v1.0.0`.
 - Update `CHANGELOG.md` for the same version before publishing a release.
 
 Release checklist:
@@ -72,7 +72,8 @@ Release checklist:
 1. Bump `VERSION_NAME` and `VERSION_CODE` in `gradle.properties`.
 2. Update `CHANGELOG.md`.
 3. Commit and push the change.
-4. Create a GitHub Release tagged `v<VERSION_NAME>`.
+4. Create a GitHub Release tagged `v<VERSION_NAME>` and copy the changelog's
+   `Features` section into the release body under a `Features` heading.
 5. Let the release workflow build and attach the signed APK/AAB.
 6. Let the same workflow publish the signed AAB to the configured Google Play
    track. The default configuration targets the internal track as a draft; set
@@ -240,8 +241,8 @@ GitHub Release behavior:
 - Unit tests and lint run before signing secrets, OIDC credentials, or Play
   credentials are loaded.
 - The workflow attaches the signed APK and AAB to the GitHub Release.
-- The workflow creates Play release notes from the GitHub Release body for
-  `de-DE` and `en-US`, trimmed for Play's release-notes field.
+- The workflow creates Play release notes from the GitHub Release `Features`
+  section for `de-DE` and `en-US`, trimmed for Play's release-notes field.
 - The workflow uploads the R8 mapping file with the AAB so Play can deobfuscate
   release stack traces.
 - No service account JSON key is committed or stored as a GitHub secret; the
